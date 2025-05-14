@@ -4,11 +4,24 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-interface AuthRequest extends Request {
-  user?: any;
+interface JwtPayload {
+  id: number;
+  email: string;
 }
 
-export const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
+// Étendre l'interface Request d'Express
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: number;
+        email: string;
+      };
+    }
+  }
+}
+
+export const auth = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
@@ -16,8 +29,11 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
       throw new Error();
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
-    req.user = decoded;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as JwtPayload;
+    req.user = {
+      id: decoded.id,
+      email: decoded.email
+    };
     next();
   } catch (error) {
     res.status(401).json({ message: 'Veuillez vous authentifier' });

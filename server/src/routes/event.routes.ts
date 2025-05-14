@@ -1,5 +1,6 @@
 import express from 'express';
 import { auth } from '../middleware/auth.middleware';
+import { getEvents, createEvent, updateEvent, deleteEvent } from '../controllers/event.controller';
 
 const router = express.Router();
 
@@ -7,20 +8,9 @@ const router = express.Router();
 router.use(auth);
 
 // Routes des événements
-router.get('/', (req, res) => {
-  res.json({ message: 'Liste des événements' });
-});
-
-router.post('/', (req, res) => {
-  res.json({ message: 'Événement créé' });
-});
-
-router.put('/:id', (req, res) => {
-  res.json({ message: 'Événement mis à jour' });
-});
-
-router.delete('/:id', (req, res) => {
-  res.json({ message: 'Événement supprimé' });
-});
+router.get('/', getEvents);
+router.post('/', createEvent);
+router.put('/:id', updateEvent);
+router.delete('/:id', deleteEvent);
 
 export default router; 

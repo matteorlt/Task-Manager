@@ -33,9 +33,12 @@ import {
 } from '../store/slices/taskSlice';
 import { Task } from '../store/slices/taskSlice';
 
+const TASKS_URL = 'http://localhost:3000/api/tasks';
+
 const Tasks: React.FC = () => {
   const dispatch = useDispatch();
   const { tasks, loading } = useSelector((state: RootState) => state.tasks);
+  const { token } = useSelector((state: RootState) => state.auth);
   const [open, setOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [formData, setFormData] = useState({
@@ -52,7 +55,11 @@ const Tasks: React.FC = () => {
     const fetchTasks = async () => {
       try {
         dispatch(fetchTasksStart());
-        const response = await fetch('/api/tasks');
+        const response = await fetch(TASKS_URL, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         const data = await response.json();
         dispatch(fetchTasksSuccess(data));
       } catch (error) {
@@ -60,8 +67,10 @@ const Tasks: React.FC = () => {
       }
     };
 
-    fetchTasks();
-  }, [dispatch]);
+    if (token) {
+      fetchTasks();
+    }
+  }, [dispatch, token]);
 
   const handleOpen = (task?: Task) => {
     if (task) {
@@ -104,20 +113,22 @@ const Tasks: React.FC = () => {
 
     try {
       if (editingTask) {
-        const response = await fetch(`/api/tasks/${editingTask.id}`, {
+        const response = await fetch(`${TASKS_URL}/${editingTask.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(taskData),
         });
         const data = await response.json();
         dispatch(updateTask(data));
       } else {
-        const response = await fetch('/api/tasks', {
+        const response = await fetch(TASKS_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(taskData),
         });
@@ -133,8 +144,11 @@ const Tasks: React.FC = () => {
   const handleDelete = async (taskId: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
       try {
-        await fetch(`/api/tasks/${taskId}`, {
+        await fetch(`${TASKS_URL}/${taskId}`, {
           method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         });
         dispatch(deleteTask(taskId));
       } catch (error) {
