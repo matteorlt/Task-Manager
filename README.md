@@ -19,6 +19,10 @@ Une application web complète de gestion de tâches et d'événements, construit
 
 ## Technologies Utilisées
 
+### IA Utilisée
+- Cursor
+- GPT 4o
+
 ### Frontend
 - React avec TypeScript
 - Redux Toolkit pour la gestion d'état
@@ -43,8 +47,8 @@ Une application web complète de gestion de tâches et d'événements, construit
 
 1. **Cloner le repository**
 ```bash
-git clone [URL_DU_REPO]
-cd [NOM_DU_PROJET]
+git clone https://github.com/matteorlt/Task-Manager
+cd Task-Manager
 ```
 
 2. **Configuration du Backend**
