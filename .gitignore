@@ -1,7 +1,8 @@
 # Dépendances
-/node_modules
-/.pnp
-.pnp.js
+node_modules/
+**/node_modules/
+client/node_modules/
+client/package-lock.json
 
 # Tests
 /coverage
