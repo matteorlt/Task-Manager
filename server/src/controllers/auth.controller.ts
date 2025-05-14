@@ -7,6 +7,13 @@ export const register = async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
 
+    console.log('Tentative d\'inscription pour:', email);
+
+    if (!name || !email || !password) {
+      console.log('Données manquantes:', { name, email, password: password ? '***' : undefined });
+      return res.status(400).json({ message: 'Tous les champs sont requis' });
+    }
+
     // Vérifier si l'utilisateur existe déjà
     const [existingUsers] = await pool.execute(
       'SELECT * FROM users WHERE email = ?',
@@ -14,6 +21,7 @@ export const register = async (req: Request, res: Response) => {
     );
 
     if (Array.isArray(existingUsers) && existingUsers.length > 0) {
+      console.log('Email déjà utilisé:', email);
       return res.status(400).json({ message: 'Cet email est déjà utilisé' });
     }
 
@@ -26,9 +34,14 @@ export const register = async (req: Request, res: Response) => {
       [name, email, hashedPassword]
     );
 
+    console.log('Utilisateur créé avec succès:', email);
     res.status(201).json({ message: 'Utilisateur créé avec succès' });
   } catch (error) {
-    res.status(500).json({ message: 'Erreur lors de l\'inscription' });
+    console.error('Erreur lors de l\'inscription:', error);
+    res.status(500).json({ 
+      message: 'Erreur lors de l\'inscription',
+      error: error instanceof Error ? error.message : 'Erreur inconnue'
+    });
   }
 };
 

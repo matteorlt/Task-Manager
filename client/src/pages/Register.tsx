@@ -9,6 +9,7 @@ import {
   Link,
   Alert,
 } from '@mui/material';
+import { API_ENDPOINTS } from '../config';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -40,7 +41,7 @@ const Register: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
