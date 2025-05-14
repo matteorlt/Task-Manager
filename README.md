@@ -146,6 +146,6 @@ Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 
 ## Contact
 
-Votre Nom - [@votre_twitter](https://twitter.com/votre_twitter) - email@example.com
+Linkedin et Mail - [@matteo-rlt](https://www.linkedin.com/in/matteo-rlt/) - rannouletexiermatteo@gmail.com
 
-Lien du projet: [https://github.com/votre_username/votre_repo](https://github.com/votre_username/votre_repo) 
+Lien du projet: [https://github.com/matteorlt/Task-Manager](https://github.com/matteorlt/Task-Manager) 
