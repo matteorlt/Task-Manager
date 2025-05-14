@@ -34,16 +34,44 @@ export const createTask = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Non authentifié' });
     }
 
-    const [result] = await pool.execute<ResultSetHeader>(
-      'INSERT INTO tasks (user_id, title, description, status, priority, due_date, category) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [userId, title, description, status, priority, dueDate, category]
-    );
+    if (!title) {
+      return res.status(400).json({ message: 'Le titre est requis' });
+    }
 
-    const [newTask] = await pool.execute<Task[]>(
-      'SELECT * FROM tasks WHERE id = ?',
-      [result.insertId]
-    );
-    res.status(201).json(newTask[0]);
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [result] = await connection.execute<ResultSetHeader>(
+        'INSERT INTO tasks (user_id, title, description, status, priority, due_date, category) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [userId, title, description, status, priority, dueDate, category]
+      );
+
+      if (tags && tags.length > 0) {
+        for (const tag of tags) {
+          await connection.execute(
+            'INSERT INTO task_tags (task_id, tag) VALUES (?, ?)',
+            [result.insertId, tag]
+          );
+        }
+      }
+
+      const [newTask] = await connection.execute<Task[]>(
+        'SELECT t.*, GROUP_CONCAT(tt.tag) as tags FROM tasks t LEFT JOIN task_tags tt ON t.id = tt.task_id WHERE t.id = ? GROUP BY t.id',
+        [result.insertId]
+      );
+
+      await connection.commit();
+      res.status(201).json({
+        ...newTask[0],
+        tags: newTask[0].tags ? newTask[0].tags.split(',') : []
+      });
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   } catch (error) {
     console.error('Erreur lors de la création de la tâche:', error);
     res.status(500).json({ message: 'Erreur lors de la création de la tâche' });
@@ -60,16 +88,48 @@ export const updateTask = async (req: Request, res: Response) => {
       return res.status(401).json({ message: 'Non authentifié' });
     }
 
-    await pool.execute(
-      'UPDATE tasks SET title = ?, description = ?, status = ?, priority = ?, due_date = ?, category = ? WHERE id = ? AND user_id = ?',
-      [title, description, status, priority, dueDate, category, id, userId]
-    );
+    if (!title) {
+      return res.status(400).json({ message: 'Le titre est requis' });
+    }
 
-    const [updatedTask] = await pool.execute<Task[]>(
-      'SELECT * FROM tasks WHERE id = ?',
-      [id]
-    );
-    res.json(updatedTask[0]);
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      await connection.execute(
+        'UPDATE tasks SET title = ?, description = ?, status = ?, priority = ?, due_date = ?, category = ? WHERE id = ? AND user_id = ?',
+        [title, description, status, priority, dueDate, category, id, userId]
+      );
+
+      // Supprimer les anciens tags
+      await connection.execute('DELETE FROM task_tags WHERE task_id = ?', [id]);
+
+      // Ajouter les nouveaux tags
+      if (tags && tags.length > 0) {
+        for (const tag of tags) {
+          await connection.execute(
+            'INSERT INTO task_tags (task_id, tag) VALUES (?, ?)',
+            [id, tag]
+          );
+        }
+      }
+
+      const [updatedTask] = await connection.execute<Task[]>(
+        'SELECT t.*, GROUP_CONCAT(tt.tag) as tags FROM tasks t LEFT JOIN task_tags tt ON t.id = tt.task_id WHERE t.id = ? GROUP BY t.id',
+        [id]
+      );
+
+      await connection.commit();
+      res.json({
+        ...updatedTask[0],
+        tags: updatedTask[0].tags ? updatedTask[0].tags.split(',') : []
+      });
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   } catch (error) {
     console.error('Erreur lors de la mise à jour de la tâche:', error);
     res.status(500).json({ message: 'Erreur lors de la mise à jour de la tâche' });

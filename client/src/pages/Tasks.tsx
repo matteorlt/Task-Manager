@@ -16,6 +16,8 @@ import {
   MenuItem,
   IconButton,
   Chip,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -41,6 +43,8 @@ const Tasks: React.FC = () => {
   const { token } = useSelector((state: RootState) => state.auth);
   const [open, setOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -82,7 +86,7 @@ const Tasks: React.FC = () => {
         priority: task.priority,
         dueDate: task.dueDate.split('T')[0],
         category: task.category,
-        tags: task.tags.join(', '),
+        tags: Array.isArray(task.tags) ? task.tags.join(', ') : '',
       });
     } else {
       setEditingTask(null);
@@ -106,9 +110,32 @@ const Tasks: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    if (!formData.title.trim()) {
+      setError('Le titre est requis');
+      return;
+    }
+
+    // Conversion de la date au format YYYY-MM-DD
+    let dueDate = formData.dueDate;
+    if (dueDate && dueDate.includes('/')) {
+      const [day, month, year] = dueDate.split('/');
+      dueDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    if (!editingTask && !window.confirm('Voulez-vous créer cette tâche ?')) {
+      return;
+    }
+
     const taskData = {
       ...formData,
-      tags: formData.tags.split(',').map(tag => tag.trim()),
+      dueDate,
+      tags: formData.tags
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag !== ''),
     };
 
     try {
@@ -121,8 +148,15 @@ const Tasks: React.FC = () => {
           },
           body: JSON.stringify(taskData),
         });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la modification de la tâche');
+        }
+
         const data = await response.json();
         dispatch(updateTask(data));
+        setSuccess('Tâche modifiée avec succès');
       } else {
         const response = await fetch(TASKS_URL, {
           method: 'POST',
@@ -132,12 +166,20 @@ const Tasks: React.FC = () => {
           },
           body: JSON.stringify(taskData),
         });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la création de la tâche');
+        }
+
         const data = await response.json();
         dispatch(addTask(data));
+        setSuccess('Tâche créée avec succès');
       }
       handleClose();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de la tâche:', error);
+      setError(error instanceof Error ? error.message : 'Une erreur est survenue');
     }
   };
 
@@ -185,6 +227,28 @@ const Tasks: React.FC = () => {
 
   return (
     <Box>
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
+
+      <Snackbar
+        open={!!success}
+        autoHideDuration={6000}
+        onClose={() => setSuccess(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSuccess(null)} severity="success" sx={{ width: '100%' }}>
+          {success}
+        </Alert>
+      </Snackbar>
+
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">Tâches</Typography>
         <Button
@@ -197,55 +261,58 @@ const Tasks: React.FC = () => {
       </Box>
 
       <Grid container spacing={3}>
-        {tasks.map((task) => (
-          <Grid item xs={12} sm={6} md={4} key={task.id}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {task.title}
-                </Typography>
-                <Typography color="textSecondary" gutterBottom>
-                  {task.description}
-                </Typography>
-                <Box display="flex" gap={1} mb={1}>
-                  <Chip
-                    label={task.status}
-                    color={getStatusColor(task.status)}
-                    size="small"
-                  />
-                  <Chip
-                    label={task.priority}
-                    color={getPriorityColor(task.priority)}
-                    size="small"
-                  />
-                </Box>
-                <Typography variant="body2" color="textSecondary">
-                  Date limite: {new Date(task.dueDate).toLocaleDateString()}
-                </Typography>
-                {task.category && (
-                  <Typography variant="body2" color="textSecondary">
-                    Catégorie: {task.category}
+        {tasks.map((task) => {
+          const tags = Array.isArray(task.tags) ? task.tags : [];
+          return (
+            <Grid item xs={12} sm={6} md={4} key={task.id}>
+              <Card>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom>
+                    {task.title}
                   </Typography>
-                )}
-                {task.tags.length > 0 && (
-                  <Box display="flex" gap={0.5} mt={1} flexWrap="wrap">
-                    {task.tags.map((tag, index) => (
-                      <Chip key={index} label={tag} size="small" />
-                    ))}
+                  <Typography color="textSecondary" gutterBottom>
+                    {task.description}
+                  </Typography>
+                  <Box display="flex" gap={1} mb={1}>
+                    <Chip
+                      label={task.status}
+                      color={getStatusColor(task.status)}
+                      size="small"
+                    />
+                    <Chip
+                      label={task.priority}
+                      color={getPriorityColor(task.priority)}
+                      size="small"
+                    />
                   </Box>
-                )}
-              </CardContent>
-              <CardActions>
-                <IconButton size="small" onClick={() => handleOpen(task)}>
-                  <EditIcon />
-                </IconButton>
-                <IconButton size="small" onClick={() => handleDelete(task.id)}>
-                  <DeleteIcon />
-                </IconButton>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
+                  <Typography variant="body2" color="textSecondary">
+                    Date limite: {new Date(task.dueDate).toLocaleDateString()}
+                  </Typography>
+                  {task.category && (
+                    <Typography variant="body2" color="textSecondary">
+                      Catégorie: {task.category}
+                    </Typography>
+                  )}
+                  {tags.length > 0 && (
+                    <Box display="flex" gap={0.5} mt={1} flexWrap="wrap">
+                      {tags.map((tag, index) => (
+                        <Chip key={index} label={tag} size="small" />
+                      ))}
+                    </Box>
+                  )}
+                </CardContent>
+                <CardActions>
+                  <IconButton size="small" onClick={() => handleOpen(task)}>
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton size="small" onClick={() => handleDelete(task.id)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </CardActions>
+              </Card>
+            </Grid>
+          );
+        })}
       </Grid>
 
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -313,16 +380,17 @@ const Tasks: React.FC = () => {
             />
             <TextField
               fullWidth
-              label="Tags (séparés par des virgules)"
+              label="Tags"
               value={formData.tags}
               onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
               margin="normal"
-              helperText="Séparez les tags par des virgules"
+              placeholder="Ex: urgent, travail, personnel"
+              helperText="Séparez les tags par des virgules (ex: urgent, travail, personnel)"
             />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Annuler</Button>
-            <Button type="submit" variant="contained">
+            <Button type="submit" variant="contained" color="primary">
               {editingTask ? 'Modifier' : 'Créer'}
             </Button>
           </DialogActions>
