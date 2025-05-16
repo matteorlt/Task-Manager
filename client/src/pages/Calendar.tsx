@@ -13,6 +13,7 @@ import {
   Paper,
   FormControlLabel,
   Switch,
+  Alert,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
@@ -67,12 +68,16 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
+const EVENTS_URL = 'http://localhost:3000/api/events';
+
 const CalendarPage: React.FC = () => {
   const dispatch = useDispatch();
   const { events, loading: eventsLoading } = useSelector((state: RootState) => state.events);
   const { tasks, loading: tasksLoading } = useSelector((state: RootState) => state.tasks);
+  const { token } = useSelector((state: RootState) => state.auth);
   const [open, setOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -87,13 +92,27 @@ const CalendarPage: React.FC = () => {
       try {
         // Fetch events
         dispatch(fetchEventsStart());
-        const eventsResponse = await fetch('/api/events');
+        const eventsResponse = await fetch(EVENTS_URL, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!eventsResponse.ok) {
+          throw new Error('Erreur lors du chargement des événements');
+        }
         const eventsData = await eventsResponse.json();
         dispatch(fetchEventsSuccess(eventsData));
 
         // Fetch tasks
         dispatch(fetchTasksStart());
-        const tasksResponse = await fetch('/api/tasks');
+        const tasksResponse = await fetch('http://localhost:3000/api/tasks', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!tasksResponse.ok) {
+          throw new Error('Erreur lors du chargement des tâches');
+        }
         const tasksData = await tasksResponse.json();
         dispatch(fetchTasksSuccess(tasksData));
       } catch (error) {
@@ -102,22 +121,35 @@ const CalendarPage: React.FC = () => {
       }
     };
 
-    fetchData();
-  }, [dispatch]);
+    if (token) {
+      fetchData();
+    }
+  }, [dispatch, token]);
 
-  // Convertir les tâches en événements pour le calendrier
+  // DEBUG : Affichage brut des events
+  console.log('events (brut):', JSON.stringify(events, null, 2));
+
+  // Convertir les tâches et événements en événements pour le calendrier
   const calendarEvents: CalendarEvent[] = [
-    ...events.map(event => ({
-      id: event.id,
-      title: event.title,
-      description: event.description,
-      startDate: new Date(event.startDate),
-      endDate: new Date(event.endDate),
-      allDay: event.allDay,
-      type: 'event' as const,
-      location: event.location,
-      participants: event.participants
-    })),
+    ...events
+      .filter(event => (event.startDate || (event as any)['start_date']))
+      .map(event => {
+        const start = new Date(event.startDate || (event as any)['start_date']);
+        const rawEnd = new Date(event.endDate || (event as any)['end_date']);
+        const end = new Date(rawEnd);
+        end.setDate(end.getDate() + 1); // Ajoute 1 jour pour inclure la date de fin
+        return {
+          id: `event-${event.id}`,
+          title: `📅 ${event.title}`,
+          startDate: start,
+          endDate: end,
+          allDay: true,
+          type: 'event' as const,
+          description: event.description,
+          location: event.location,
+          participants: event.participants
+        };
+      }),
     ...tasks.map(task => ({
       id: `task-${task.id}`,
       title: `📝 ${task.title}`,
@@ -130,6 +162,12 @@ const CalendarPage: React.FC = () => {
       priority: task.priority
     }))
   ];
+  console.log('calendarEvents (détail):', JSON.stringify(calendarEvents, null, 2));
+  // DEBUG : Affichage des données dans la console
+  console.log('--- DEBUG CALENDRIER ---');
+  console.log('events:', events);
+  console.log('tasks:', tasks);
+  console.log('calendarEvents:', calendarEvents);
 
   const handleOpen = (event?: CalendarEvent) => {
     if (event) {
@@ -163,6 +201,26 @@ const CalendarPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
+    if (!formData.title.trim()) {
+      setError('Le titre est requis');
+      return;
+    }
+
+    if (!formData.startDate || !formData.endDate) {
+      setError('Les dates de début et de fin sont requises');
+      return;
+    }
+
+    // S'assurer que la date de fin est après la date de début
+    const startDate = new Date(formData.startDate);
+    const endDate = new Date(formData.endDate);
+    if (endDate < startDate) {
+      setError('La date de fin doit être après la date de début');
+      return;
+    }
+
     const eventData = {
       ...formData,
       startDate: formatDateForServer(formData.startDate),
@@ -171,29 +229,44 @@ const CalendarPage: React.FC = () => {
 
     try {
       if (selectedEvent && selectedEvent.type === 'event') {
-        const response = await fetch(`/api/events/${selectedEvent.id}`, {
+        const response = await fetch(`${EVENTS_URL}/${selectedEvent.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(eventData),
         });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la modification de l\'événement');
+        }
+
         const data = await response.json();
         dispatch(updateEvent(data));
       } else {
-        const response = await fetch('/api/events', {
+        const response = await fetch(EVENTS_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify(eventData),
         });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la création de l\'événement');
+        }
+
         const data = await response.json();
         dispatch(addEvent(data));
       }
       handleClose();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de l\'événement:', error);
+      setError(error instanceof Error ? error.message : 'Une erreur est survenue');
     }
   };
 
@@ -212,6 +285,13 @@ const CalendarPage: React.FC = () => {
 
   return (
     <Box>
+      {/* Message d'erreur si aucun événement ni tâche */}
+      {calendarEvents.length === 0 && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Aucun événement ou tâche à afficher dans le calendrier (mode debug).<br />
+          Vérifiez la console pour plus d'informations.
+        </Alert>
+      )}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h4">Calendrier</Typography>
         <Button
@@ -235,12 +315,24 @@ const CalendarPage: React.FC = () => {
           selectable
           eventPropGetter={(event) => ({
             style: {
-              backgroundColor: event.type === 'task' ? '#f50057' : '#1976d2',
+              backgroundColor: event.type === 'task' ? '#f50057' : '#4caf50',
               borderRadius: '4px',
               opacity: 0.8,
               color: 'white',
               border: '0px',
-              display: 'block'
+              display: 'block',
+              padding: '2px 4px',
+              fontSize: event.type === 'task' ? '0.875rem' : '0.75rem',
+              fontWeight: event.type === 'task' ? 'normal' : 'bold',
+              textAlign: event.type === 'task' ? 'left' : 'center',
+              textTransform: event.type === 'task' ? 'none' : 'uppercase',
+              boxShadow: event.type === 'task' ? 'none' : '0 2px 4px rgba(0,0,0,0.2)',
+              margin: event.type === 'task' ? '0' : '2px 0',
+              height: event.type === 'task' ? 'auto' : '24px',
+              lineHeight: event.type === 'task' ? 'normal' : '24px',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
             }
           })}
           messages={{
@@ -265,6 +357,11 @@ const CalendarPage: React.FC = () => {
         </DialogTitle>
         <form onSubmit={handleSubmit}>
           <DialogContent>
+            {error && (
+              <Typography color="error" sx={{ mb: 2 }}>
+                {error}
+              </Typography>
+            )}
             <TextField
               fullWidth
               label="Titre"
@@ -272,6 +369,7 @@ const CalendarPage: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               margin="normal"
               required
+              error={!!error && !formData.title}
             />
             <TextField
               fullWidth
@@ -291,6 +389,7 @@ const CalendarPage: React.FC = () => {
               margin="normal"
               InputLabelProps={{ shrink: true }}
               required
+              error={!!error && !formData.startDate}
             />
             <TextField
               fullWidth
@@ -301,6 +400,7 @@ const CalendarPage: React.FC = () => {
               margin="normal"
               InputLabelProps={{ shrink: true }}
               required
+              error={!!error && !formData.endDate}
             />
             <TextField
               fullWidth

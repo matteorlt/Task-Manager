@@ -35,13 +35,17 @@ import {
 } from '../store/slices/taskSlice';
 import { Task } from '../store/slices/taskSlice';
 import { formatDate, formatDateForInput, formatDateForServer } from '../utils/dateUtils';
+import { fetchEventsStart, fetchEventsSuccess, fetchEventsFailure } from '../store/slices/eventSlice';
+import { Event } from '../store/slices/eventSlice';
 
 const TASKS_URL = 'http://localhost:3000/api/tasks';
+const EVENTS_URL = 'http://localhost:3000/api/events';
 
 const Tasks: React.FC = () => {
   const dispatch = useDispatch();
   const { tasks, loading } = useSelector((state: RootState) => state.tasks);
   const { token } = useSelector((state: RootState) => state.auth);
+  const { events, loading: eventsLoading } = useSelector((state: RootState) => state.events);
   const [open, setOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -71,9 +75,23 @@ const Tasks: React.FC = () => {
         dispatch(fetchTasksFailure('Erreur lors du chargement des tâches'));
       }
     };
-
+    const fetchEvents = async () => {
+      try {
+        dispatch(fetchEventsStart());
+        const response = await fetch(EVENTS_URL, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+        dispatch(fetchEventsSuccess(data));
+      } catch (error) {
+        dispatch(fetchEventsFailure('Erreur lors du chargement des événements'));
+      }
+    };
     if (token) {
       fetchTasks();
+      fetchEvents();
     }
   }, [dispatch, token]);
 
@@ -307,6 +325,35 @@ const Tasks: React.FC = () => {
             </Grid>
           );
         })}
+      </Grid>
+
+      {/* Section Événements */}
+      <Typography variant="h5" mt={4} mb={2}>Événements</Typography>
+      <Grid container spacing={3}>
+        {events.map((event: Event) => (
+          <Grid item xs={12} sm={6} md={4} key={event.id}>
+            <Card>
+              <CardContent>
+                <Typography variant="h6" gutterBottom>{event.title}</Typography>
+                <Typography color="textSecondary" gutterBottom>{event.description}</Typography>
+                <Typography variant="body2" color="textSecondary">
+                  Début : {formatDate(event.startDate)}<br />
+                  Fin : {formatDate(event.endDate)}
+                </Typography>
+                {event.location && (
+                  <Typography variant="body2" color="textSecondary">
+                    Lieu : {event.location}
+                  </Typography>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+        {events.length === 0 && !eventsLoading && (
+          <Grid item xs={12}>
+            <Typography>Aucun événement à afficher</Typography>
+          </Grid>
+        )}
       </Grid>
 
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
