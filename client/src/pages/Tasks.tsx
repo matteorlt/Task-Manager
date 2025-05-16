@@ -34,6 +34,7 @@ import {
   deleteTask,
 } from '../store/slices/taskSlice';
 import { Task } from '../store/slices/taskSlice';
+import { formatDate, formatDateForInput, formatDateForServer } from '../utils/dateUtils';
 
 const TASKS_URL = 'http://localhost:3000/api/tasks';
 
@@ -84,7 +85,7 @@ const Tasks: React.FC = () => {
         description: task.description,
         status: task.status,
         priority: task.priority,
-        dueDate: task.dueDate.split('T')[0],
+        dueDate: formatDateForInput(task.dueDate),
         category: task.category,
         tags: Array.isArray(task.tags) ? task.tags.join(', ') : '',
       });
@@ -118,25 +119,18 @@ const Tasks: React.FC = () => {
       return;
     }
 
-    // Conversion de la date au format YYYY-MM-DD
-    let dueDate = formData.dueDate;
-    if (dueDate && dueDate.includes('/')) {
-      const [day, month, year] = dueDate.split('/');
-      dueDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-    }
-
-    if (!editingTask && !window.confirm('Voulez-vous créer cette tâche ?')) {
-      return;
-    }
-
     const taskData = {
       ...formData,
-      dueDate,
+      dueDate: formatDateForServer(formData.dueDate),
       tags: formData.tags
         .split(',')
         .map(tag => tag.trim())
         .filter(tag => tag !== ''),
     };
+
+    if (!editingTask && !window.confirm('Voulez-vous créer cette tâche ?')) {
+      return;
+    }
 
     try {
       if (editingTask) {
@@ -286,7 +280,7 @@ const Tasks: React.FC = () => {
                     />
                   </Box>
                   <Typography variant="body2" color="textSecondary">
-                    Date limite: {new Date(task.dueDate).toLocaleDateString()}
+                    Date limite: {formatDate(task.dueDate)}
                   </Typography>
                   {task.category && (
                     <Typography variant="body2" color="textSecondary">

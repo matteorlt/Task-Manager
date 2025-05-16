@@ -33,6 +33,7 @@ import {
 } from '../store/slices/eventSlice';
 import { Event } from '../store/slices/eventSlice';
 import Calendar from '@components/Calendar';
+import { formatDate, formatDateForInput, formatDateForServer } from '../utils/dateUtils';
 
 const EVENTS_URL = 'http://localhost:3000/api/events';
 
@@ -78,15 +79,15 @@ const Events: React.FC = () => {
       setFormData({
         title: event.title,
         description: event.description,
-        startDate: event.startDate.split('T')[0],
-        endDate: event.endDate.split('T')[0],
+        startDate: formatDateForInput(event.startDate),
+        endDate: formatDateForInput(event.endDate),
         allDay: event.allDay,
         location: event.location,
       });
     } else {
       const today = new Date();
-      const defaultStartDate = startDate || today.toISOString().split('T')[0];
-      const defaultEndDate = startDate || today.toISOString().split('T')[0];
+      const defaultStartDate = startDate ? formatDateForInput(startDate) : formatDateForInput(today);
+      const defaultEndDate = startDate ? formatDateForInput(startDate) : formatDateForInput(today);
       
       setEditingEvent(null);
       setFormData({
@@ -108,6 +109,11 @@ const Events: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const eventData = {
+      ...formData,
+      startDate: formatDateForServer(formData.startDate),
+      endDate: formatDateForServer(formData.endDate),
+    };
     try {
       if (editingEvent) {
         const response = await fetch(`${EVENTS_URL}/${editingEvent.id}`, {
@@ -116,7 +122,7 @@ const Events: React.FC = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(eventData),
         });
         const data = await response.json();
         dispatch(updateEvent(data));
@@ -127,7 +133,7 @@ const Events: React.FC = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(eventData),
         });
         const data = await response.json();
         dispatch(addEvent(data));
@@ -188,10 +194,10 @@ const Events: React.FC = () => {
                   {event.description}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Début: {new Date(event.startDate).toLocaleString()}
+                  Début: {formatDate(event.startDate)}
                 </Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Fin: {new Date(event.endDate).toLocaleString()}
+                  Fin: {formatDate(event.endDate)}
                 </Typography>
                 {event.location && (
                   <Typography variant="body2" color="textSecondary">

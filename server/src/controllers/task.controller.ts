@@ -18,7 +18,14 @@ interface Task extends RowDataPacket {
 export const getTasks = async (req: Request, res: Response) => {
   try {
     const [tasks] = await pool.execute<Task[]>('SELECT * FROM tasks');
-    res.json(tasks);
+    // Convertir les dates au format ISO
+    const formattedTasks = tasks.map(task => ({
+      ...task,
+      dueDate: task.due_date ? task.due_date.toISOString() : null,
+      createdAt: task.created_at.toISOString(),
+      updatedAt: task.updated_at.toISOString()
+    }));
+    res.json(formattedTasks);
   } catch (error) {
     console.error('Erreur lors de la récupération des tâches:', error);
     res.status(500).json({ message: 'Erreur lors de la récupération des tâches' });
@@ -64,6 +71,9 @@ export const createTask = async (req: Request, res: Response) => {
       await connection.commit();
       res.status(201).json({
         ...newTask[0],
+        dueDate: newTask[0].due_date ? newTask[0].due_date.toISOString() : null,
+        createdAt: newTask[0].created_at.toISOString(),
+        updatedAt: newTask[0].updated_at.toISOString(),
         tags: newTask[0].tags ? newTask[0].tags.split(',') : []
       });
     } catch (error) {
@@ -122,6 +132,9 @@ export const updateTask = async (req: Request, res: Response) => {
       await connection.commit();
       res.json({
         ...updatedTask[0],
+        dueDate: updatedTask[0].due_date ? updatedTask[0].due_date.toISOString() : null,
+        createdAt: updatedTask[0].created_at.toISOString(),
+        updatedAt: updatedTask[0].updated_at.toISOString(),
         tags: updatedTask[0].tags ? updatedTask[0].tags.split(',') : []
       });
     } catch (error) {
