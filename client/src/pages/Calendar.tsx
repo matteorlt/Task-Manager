@@ -11,9 +11,11 @@ import {
   TextField,
   MenuItem,
   Paper,
+  FormControlLabel,
+  Switch,
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
-import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
 import format from 'date-fns/format';
 import parse from 'date-fns/parse';
 import startOfWeek from 'date-fns/startOfWeek';
@@ -29,7 +31,29 @@ import {
   updateEvent,
   deleteEvent,
 } from '../store/slices/eventSlice';
+import {
+  fetchTasksStart,
+  fetchTasksSuccess,
+  fetchTasksFailure,
+} from '../store/slices/taskSlice';
 import { Event } from '../store/slices/eventSlice';
+import { Task } from '../store/slices/taskSlice';
+import { formatDate, formatDateForInput, formatDateForServer } from '../utils/dateUtils';
+
+// Type commun pour les événements du calendrier
+interface CalendarEvent {
+  id: string;
+  title: string;
+  startDate: Date;
+  endDate: Date;
+  allDay: boolean;
+  type: 'event' | 'task';
+  description: string;
+  location?: string;
+  participants?: string[];
+  status?: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+}
 
 const locales = {
   'fr': fr,
@@ -45,9 +69,10 @@ const localizer = dateFnsLocalizer({
 
 const CalendarPage: React.FC = () => {
   const dispatch = useDispatch();
-  const { events, loading } = useSelector((state: RootState) => state.events);
+  const { events, loading: eventsLoading } = useSelector((state: RootState) => state.events);
+  const { tasks, loading: tasksLoading } = useSelector((state: RootState) => state.tasks);
   const [open, setOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -58,30 +83,64 @@ const CalendarPage: React.FC = () => {
   });
 
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchData = async () => {
       try {
+        // Fetch events
         dispatch(fetchEventsStart());
-        const response = await fetch('/api/events');
-        const data = await response.json();
-        dispatch(fetchEventsSuccess(data));
+        const eventsResponse = await fetch('/api/events');
+        const eventsData = await eventsResponse.json();
+        dispatch(fetchEventsSuccess(eventsData));
+
+        // Fetch tasks
+        dispatch(fetchTasksStart());
+        const tasksResponse = await fetch('/api/tasks');
+        const tasksData = await tasksResponse.json();
+        dispatch(fetchTasksSuccess(tasksData));
       } catch (error) {
-        dispatch(fetchEventsFailure('Erreur lors du chargement des événements'));
+        dispatch(fetchEventsFailure('Erreur lors du chargement des données'));
+        dispatch(fetchTasksFailure('Erreur lors du chargement des données'));
       }
     };
 
-    fetchEvents();
+    fetchData();
   }, [dispatch]);
 
-  const handleOpen = (event?: Event) => {
+  // Convertir les tâches en événements pour le calendrier
+  const calendarEvents: CalendarEvent[] = [
+    ...events.map(event => ({
+      id: event.id,
+      title: event.title,
+      description: event.description,
+      startDate: new Date(event.startDate),
+      endDate: new Date(event.endDate),
+      allDay: event.allDay,
+      type: 'event' as const,
+      location: event.location,
+      participants: event.participants
+    })),
+    ...tasks.map(task => ({
+      id: `task-${task.id}`,
+      title: `📝 ${task.title}`,
+      startDate: new Date(task.dueDate),
+      endDate: new Date(task.dueDate),
+      allDay: true,
+      type: 'task' as const,
+      description: task.description,
+      status: task.status,
+      priority: task.priority
+    }))
+  ];
+
+  const handleOpen = (event?: CalendarEvent) => {
     if (event) {
       setSelectedEvent(event);
       setFormData({
         title: event.title,
         description: event.description,
-        startDate: event.startDate.split('T')[0],
-        endDate: event.endDate.split('T')[0],
+        startDate: formatDateForInput(event.startDate),
+        endDate: formatDateForInput(event.endDate),
         allDay: event.allDay,
-        location: event.location,
+        location: event.location || '',
       });
     } else {
       setSelectedEvent(null);
@@ -106,12 +165,12 @@ const CalendarPage: React.FC = () => {
     e.preventDefault();
     const eventData = {
       ...formData,
-      startDate: new Date(formData.startDate).toISOString(),
-      endDate: new Date(formData.endDate).toISOString(),
+      startDate: formatDateForServer(formData.startDate),
+      endDate: formatDateForServer(formData.endDate),
     };
 
     try {
-      if (selectedEvent) {
+      if (selectedEvent && selectedEvent.type === 'event') {
         const response = await fetch(`/api/events/${selectedEvent.id}`, {
           method: 'PUT',
           headers: {
@@ -147,7 +206,7 @@ const CalendarPage: React.FC = () => {
     handleOpen();
   };
 
-  const handleEventClick = (event: Event) => {
+  const handleEventClick = (event: CalendarEvent) => {
     handleOpen(event);
   };
 
@@ -165,15 +224,25 @@ const CalendarPage: React.FC = () => {
       </Box>
 
       <Paper sx={{ p: 2 }}>
-        <Calendar
+        <Calendar<CalendarEvent>
           localizer={localizer}
-          events={events}
+          events={calendarEvents}
           startAccessor="startDate"
           endAccessor="endDate"
           style={{ height: 600 }}
           onSelectSlot={handleSelect}
           onSelectEvent={handleEventClick}
           selectable
+          eventPropGetter={(event) => ({
+            style: {
+              backgroundColor: event.type === 'task' ? '#f50057' : '#1976d2',
+              borderRadius: '4px',
+              opacity: 0.8,
+              color: 'white',
+              border: '0px',
+              display: 'block'
+            }
+          })}
           messages={{
             next: "Suivant",
             previous: "Précédent",

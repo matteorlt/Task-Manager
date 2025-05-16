@@ -14,6 +14,7 @@ import {
 import { RootState } from '../store';
 import { fetchTasksStart, fetchTasksSuccess, fetchTasksFailure } from '../store/slices/taskSlice';
 import { fetchEventsStart, fetchEventsSuccess, fetchEventsFailure } from '../store/slices/eventSlice';
+import { formatDate } from '../utils/dateUtils';
 
 const Dashboard: React.FC = () => {
   const dispatch = useDispatch();
@@ -78,7 +79,7 @@ const Dashboard: React.FC = () => {
                   <ListItem>
                     <ListItemText
                       primary={task.title}
-                      secondary={`Date limite: ${new Date(task.dueDate).toLocaleDateString()}`}
+                      secondary={`Date limite: ${formatDate(task.dueDate)}`}
                     />
                   </ListItem>
                   {index < upcomingTasks.length - 1 && <Divider />}
@@ -103,7 +104,7 @@ const Dashboard: React.FC = () => {
                   <ListItem>
                     <ListItemText
                       primary={event.title}
-                      secondary={`Date: ${new Date(event.startDate).toLocaleDateString()}`}
+                      secondary={`Date: ${formatDate(event.startDate)}`}
                     />
                   </ListItem>
                   {index < upcomingEvents.length - 1 && <Divider />}
