@@ -58,24 +58,28 @@ export const createEvent = async (req: Request, res: Response) => {
 export const updateEvent = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    let { title, description, startDate, endDate, allDay, location } = req.body;
+    let { title, description, start_date, end_date, all_day, location } = req.body;
     const userId = req.user?.id;
 
     // Log pour debug
     console.log('updateEvent:', { id, userId });
+    console.log('Données reçues:', req.body);
 
     if (!userId) {
       return res.status(401).json({ message: 'Non authentifié' });
     }
 
+    // Fonction pour convertir undefined en null
+    const safe = (v: any) => v === undefined ? null : v;
+
     // Ajuster la date de fin pour inclure le dernier jour si l'heure n'est pas précisée
-    if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
-      endDate = endDate + ' 23:59:59';
+    if (end_date && /^\d{4}-\d{2}-\d{2}$/.test(end_date)) {
+      end_date = end_date + ' 23:59:59';
     }
 
     await pool.execute(
       'UPDATE events SET title = ?, description = ?, start_date = ?, end_date = ?, all_day = ?, location = ? WHERE id = ? AND user_id = ?',
-      [title, description, startDate, endDate, allDay, location, id, userId]
+      [safe(title), safe(description), safe(start_date), safe(end_date), safe(all_day), safe(location), id, userId]
     );
 
     // Toujours retourner l'événement modifié en JSON

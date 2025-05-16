@@ -253,15 +253,52 @@ const Tasks: React.FC = () => {
 
   const handleSubmitEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation des champs requis
+    if (!eventFormData.title.trim()) {
+      setError('Le titre est requis');
+      return;
+    }
+
+    if (!eventFormData.startDate) {
+      setError('La date de début est requise');
+      return;
+    }
+
+    if (!eventFormData.endDate) {
+      setError('La date de fin est requise');
+      return;
+    }
+
+    // Formatage des dates pour le backend
+    const startDate = formatDateForServer(eventFormData.startDate);
+    const endDate = formatDateForServer(eventFormData.endDate);
+
+    // S'assurer qu'aucun champ n'est undefined
     const eventData = {
-      ...eventFormData,
-      startDate: formatDateForServer(eventFormData.startDate),
-      endDate: formatDateForServer(eventFormData.endDate),
+      title: eventFormData.title || null,
+      description: eventFormData.description || null,
+      start_date: startDate || null,
+      end_date: endDate || null,
+      all_day: eventFormData.allDay || false,
+      location: eventFormData.location || null,
     };
-    console.log('Date de fin envoyée au backend :', eventData.endDate);
+
+    console.log('Token:', token);
+    console.log('Données envoyées au backend:', JSON.stringify(eventData, null, 2));
+    console.log('ID de l\'événement:', editingEvent?.id);
+
     try {
       if (editingEvent) {
-        const response = await fetch(`${EVENTS_URL}/${editingEvent.id}`, {
+        const idStr = String(editingEvent.id);
+        const eventId = idStr.startsWith('event-')
+          ? idStr.replace('event-', '')
+          : idStr;
+        
+        const url = `${EVENTS_URL}/${eventId}`;
+        console.log('URL de la requête:', url);
+        
+        const response = await fetch(url, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -269,17 +306,24 @@ const Tasks: React.FC = () => {
           },
           body: JSON.stringify(eventData),
         });
+
+        console.log('Statut de la réponse:', response.status);
+        
         if (!response.ok) {
           const errorData = await response.json();
+          console.error('Erreur du serveur:', errorData);
           throw new Error(errorData.message || 'Erreur lors de la modification de l\'événement');
         }
+
         const data = await response.json();
+        console.log('Données reçues du serveur:', data);
+        
         dispatch(updateEvent(data));
         setSuccess('Événement modifié avec succès');
       }
       handleCloseEvent();
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde de l\'événement:', error);
+      console.error('Erreur détaillée:', error);
       setError(error instanceof Error ? error.message : 'Une erreur est survenue');
     }
   };
@@ -539,7 +583,7 @@ const Tasks: React.FC = () => {
       {/* Dialog de modification d'événement */}
       <Dialog open={openEvent} onClose={handleCloseEvent} maxWidth="sm" fullWidth>
         <DialogTitle>
-          {editingEvent ? 'Modifier l\'événement' : 'Nouvel événement'}
+          {editingEvent ? "Modifier l'événement" : 'Nouvel événement'}
         </DialogTitle>
         <form onSubmit={handleSubmitEvent}>
           <DialogContent>
