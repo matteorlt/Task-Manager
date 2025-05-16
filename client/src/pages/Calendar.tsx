@@ -181,8 +181,16 @@ const CalendarPage: React.FC = () => {
         endDate = end;
       }
       setSelectedEvent(event);
+      // Retirer l'emoji du titre pour le formulaire
+      let cleanTitle = event.title;
+      if (event.type === 'event' && cleanTitle.startsWith('📅 ')) {
+        cleanTitle = cleanTitle.slice(2).trim();
+      }
+      if (event.type === 'task' && cleanTitle.startsWith('📝 ')) {
+        cleanTitle = cleanTitle.slice(2).trim();
+      }
       setFormData({
-        title: event.title,
+        title: cleanTitle,
         description: event.description,
         startDate: formatDateForInput(event.startDate),
         endDate: formatDateForInput(endDate),
@@ -230,15 +238,23 @@ const CalendarPage: React.FC = () => {
       return;
     }
 
+    // Toujours enregistrer le titre sans emoji
     const eventData = {
-      ...formData,
-      startDate: formatDateForServer(formData.startDate),
-      endDate: formatDateForServer(formData.endDate),
+      title: formData.title.trim(),
+      description: formData.description || '',
+      start_date: formatDateForServer(formData.startDate),
+      end_date: formatDateForServer(formData.endDate),
+      all_day: formData.allDay,
+      location: formData.location || '',
     };
 
     try {
       if (selectedEvent && selectedEvent.type === 'event') {
-        const response = await fetch(`${EVENTS_URL}/${selectedEvent.id}`, {
+        // Extraire l'ID numérique de l'événement
+        const eventId = selectedEvent.id.replace('event-', '');
+        console.log('Modification de l\'événement:', { eventId, eventData });
+
+        const response = await fetch(`${EVENTS_URL}/${eventId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -254,6 +270,7 @@ const CalendarPage: React.FC = () => {
 
         const data = await response.json();
         dispatch(updateEvent(data));
+        handleClose();
       } else {
         const response = await fetch(EVENTS_URL, {
           method: 'POST',
@@ -271,8 +288,8 @@ const CalendarPage: React.FC = () => {
 
         const data = await response.json();
         dispatch(addEvent(data));
+        handleClose();
       }
-      handleClose();
     } catch (error) {
       console.error('Erreur lors de la sauvegarde de l\'événement:', error);
       setError(error instanceof Error ? error.message : 'Une erreur est survenue');
