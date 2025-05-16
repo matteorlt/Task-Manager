@@ -15,6 +15,7 @@ import { RootState } from '../store';
 import { fetchTasksStart, fetchTasksSuccess, fetchTasksFailure } from '../store/slices/taskSlice';
 import { fetchEventsStart, fetchEventsSuccess, fetchEventsFailure } from '../store/slices/eventSlice';
 import { formatDate } from '../utils/dateUtils';
+import { Event } from '../store/slices/eventSlice';
 
 const Dashboard: React.FC = () => {
   const dispatch = useDispatch();
@@ -49,9 +50,18 @@ const Dashboard: React.FC = () => {
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
     .slice(0, 5);
 
+  // Filtrer les événements à venir (date de début >= aujourd'hui)
+  const today = new Date();
   const upcomingEvents = events
-    .filter(event => new Date(event.startDate) > new Date())
-    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+    .filter(event => {
+      const start = new Date(event.startDate || (event as any)['start_date']);
+      return start >= today;
+    })
+    .sort((a, b) => {
+      const aStart = new Date(a.startDate || (a as any)['start_date']);
+      const bStart = new Date(b.startDate || (b as any)['start_date']);
+      return aStart.getTime() - bStart.getTime();
+    })
     .slice(0, 5);
 
   if (tasksLoading || eventsLoading) {
@@ -104,7 +114,7 @@ const Dashboard: React.FC = () => {
                   <ListItem>
                     <ListItemText
                       primary={event.title}
-                      secondary={`Date: ${formatDate(event.startDate)}`}
+                      secondary={`Débute le : ${formatDate(event.startDate || (event as any)['start_date'])}`}
                     />
                   </ListItem>
                   {index < upcomingEvents.length - 1 && <Divider />}
