@@ -61,6 +61,9 @@ export const updateEvent = async (req: Request, res: Response) => {
     let { title, description, startDate, endDate, allDay, location } = req.body;
     const userId = req.user?.id;
 
+    // Log pour debug
+    console.log('updateEvent:', { id, userId });
+
     if (!userId) {
       return res.status(401).json({ message: 'Non authentifié' });
     }
@@ -75,11 +78,16 @@ export const updateEvent = async (req: Request, res: Response) => {
       [title, description, startDate, endDate, allDay, location, id, userId]
     );
 
+    // Toujours retourner l'événement modifié en JSON
     const [updatedEvent] = await pool.execute<Event[]>(
       'SELECT * FROM events WHERE id = ?',
       [id]
     );
-    res.json(updatedEvent[0]);
+    if (updatedEvent && updatedEvent[0]) {
+      res.json(updatedEvent[0]);
+    } else {
+      res.status(404).json({ message: "Événement non trouvé après modification" });
+    }
   } catch (error) {
     console.error('Erreur lors de la mise à jour de l\'événement:', error);
     res.status(500).json({ message: 'Erreur lors de la mise à jour de l\'événement' });

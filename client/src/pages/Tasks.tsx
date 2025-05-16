@@ -35,7 +35,7 @@ import {
 } from '../store/slices/taskSlice';
 import { Task } from '../store/slices/taskSlice';
 import { formatDate, formatDateForInput, formatDateForServer } from '../utils/dateUtils';
-import { fetchEventsStart, fetchEventsSuccess, fetchEventsFailure } from '../store/slices/eventSlice';
+import { fetchEventsStart, fetchEventsSuccess, fetchEventsFailure, updateEvent, deleteEvent } from '../store/slices/eventSlice';
 import { Event } from '../store/slices/eventSlice';
 
 const TASKS_URL = 'http://localhost:3000/api/tasks';
@@ -58,6 +58,16 @@ const Tasks: React.FC = () => {
     dueDate: '',
     category: '',
     tags: '',
+  });
+  const [openEvent, setOpenEvent] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [eventFormData, setEventFormData] = useState({
+    title: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+    allDay: false,
+    location: '',
   });
 
   useEffect(() => {
@@ -211,6 +221,86 @@ const Tasks: React.FC = () => {
     }
   };
 
+  const handleOpenEvent = (event?: Event) => {
+    if (event) {
+      setEditingEvent(event);
+      setEventFormData({
+        title: event.title,
+        description: event.description,
+        startDate: formatDateForInput(event.startDate || (event as any)['start_date']),
+        endDate: formatDateForInput(event.endDate || (event as any)['end_date']),
+        allDay: event.allDay,
+        location: event.location,
+      });
+    } else {
+      setEditingEvent(null);
+      setEventFormData({
+        title: '',
+        description: '',
+        startDate: '',
+        endDate: '',
+        allDay: false,
+        location: '',
+      });
+    }
+    setOpenEvent(true);
+  };
+
+  const handleCloseEvent = () => {
+    setOpenEvent(false);
+    setEditingEvent(null);
+  };
+
+  const handleSubmitEvent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const eventData = {
+      ...eventFormData,
+      startDate: formatDateForServer(eventFormData.startDate),
+      endDate: formatDateForServer(eventFormData.endDate),
+    };
+    console.log('Date de fin envoyée au backend :', eventData.endDate);
+    try {
+      if (editingEvent) {
+        const response = await fetch(`${EVENTS_URL}/${editingEvent.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(eventData),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la modification de l\'événement');
+        }
+        const data = await response.json();
+        dispatch(updateEvent(data));
+        setSuccess('Événement modifié avec succès');
+      }
+      handleCloseEvent();
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde de l\'événement:', error);
+      setError(error instanceof Error ? error.message : 'Une erreur est survenue');
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
+      try {
+        await fetch(`${EVENTS_URL}/${eventId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        dispatch(deleteEvent(eventId));
+        setSuccess('Événement supprimé avec succès');
+      } catch (error) {
+        console.error('Erreur lors de la suppression de l\'événement:', error);
+      }
+    }
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'HIGH':
@@ -337,8 +427,8 @@ const Tasks: React.FC = () => {
                 <Typography variant="h6" gutterBottom>{event.title}</Typography>
                 <Typography color="textSecondary" gutterBottom>{event.description}</Typography>
                 <Typography variant="body2" color="textSecondary">
-                  Début : {formatDate(event.startDate)}<br />
-                  Fin : {formatDate(event.endDate)}
+                  Début : {formatDate(event.startDate || (event as any)['start_date'])}<br />
+                  Fin : {formatDate(event.endDate || (event as any)['end_date'])}
                 </Typography>
                 {event.location && (
                   <Typography variant="body2" color="textSecondary">
@@ -346,6 +436,14 @@ const Tasks: React.FC = () => {
                   </Typography>
                 )}
               </CardContent>
+              <CardActions>
+                <IconButton size="small" onClick={() => handleOpenEvent(event)}>
+                  <EditIcon />
+                </IconButton>
+                <IconButton size="small" onClick={() => handleDeleteEvent(event.id)}>
+                  <DeleteIcon />
+                </IconButton>
+              </CardActions>
             </Card>
           </Grid>
         ))}
@@ -433,6 +531,76 @@ const Tasks: React.FC = () => {
             <Button onClick={handleClose}>Annuler</Button>
             <Button type="submit" variant="contained" color="primary">
               {editingTask ? 'Modifier' : 'Créer'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* Dialog de modification d'événement */}
+      <Dialog open={openEvent} onClose={handleCloseEvent} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          {editingEvent ? 'Modifier l\'événement' : 'Nouvel événement'}
+        </DialogTitle>
+        <form onSubmit={handleSubmitEvent}>
+          <DialogContent>
+            <TextField
+              fullWidth
+              label="Titre"
+              value={eventFormData.title}
+              onChange={(e) => setEventFormData({ ...eventFormData, title: e.target.value })}
+              margin="normal"
+              required
+            />
+            <TextField
+              fullWidth
+              label="Description"
+              value={eventFormData.description}
+              onChange={(e) => setEventFormData({ ...eventFormData, description: e.target.value })}
+              margin="normal"
+              multiline
+              rows={3}
+            />
+            <TextField
+              fullWidth
+              label="Date de début"
+              type="date"
+              value={eventFormData.startDate}
+              onChange={(e) => setEventFormData({ ...eventFormData, startDate: e.target.value })}
+              margin="normal"
+              InputLabelProps={{ shrink: true }}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Date de fin"
+              type="date"
+              value={eventFormData.endDate}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Soustrait -1 jour à la date sélectionnée
+                const dateObj = new Date(value);
+                dateObj.setDate(dateObj.getDate() - 1);
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                setEventFormData({ ...eventFormData, endDate: `${year}-${month}-${day}` });
+              }}
+              margin="normal"
+              InputLabelProps={{ shrink: true }}
+              required
+            />
+            <TextField
+              fullWidth
+              label="Lieu"
+              value={eventFormData.location}
+              onChange={(e) => setEventFormData({ ...eventFormData, location: e.target.value })}
+              margin="normal"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseEvent}>Annuler</Button>
+            <Button type="submit" variant="contained">
+              {editingEvent ? 'Modifier' : 'Créer'}
             </Button>
           </DialogActions>
         </form>

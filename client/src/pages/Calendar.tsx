@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -86,6 +87,7 @@ const CalendarPage: React.FC = () => {
     allDay: false,
     location: '',
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -135,9 +137,9 @@ const CalendarPage: React.FC = () => {
       .filter(event => (event.startDate || (event as any)['start_date']))
       .map(event => {
         const start = new Date(event.startDate || (event as any)['start_date']);
-        const rawEnd = new Date(event.endDate || (event as any)['end_date']);
-        const end = new Date(rawEnd);
-        end.setDate(end.getDate() + 1); // Ajoute 1 jour pour inclure la date de fin
+        const endRaw = new Date(event.endDate || (event as any)['end_date']);
+        const end = new Date(endRaw);
+        end.setDate(end.getDate() + 1); // Ajoute 1 jour pour l'affichage dans le calendrier
         return {
           id: `event-${event.id}`,
           title: `📅 ${event.title}`,
@@ -171,12 +173,19 @@ const CalendarPage: React.FC = () => {
 
   const handleOpen = (event?: CalendarEvent) => {
     if (event) {
+      // Si c'est un événement (et pas une tâche), on retire 1 jour à la date de fin pour le formulaire
+      let endDate = event.endDate;
+      if (event.type === 'event') {
+        const end = new Date(event.endDate);
+        end.setDate(end.getDate() - 1);
+        endDate = end;
+      }
       setSelectedEvent(event);
       setFormData({
         title: event.title,
         description: event.description,
         startDate: formatDateForInput(event.startDate),
-        endDate: formatDateForInput(event.endDate),
+        endDate: formatDateForInput(endDate),
         allDay: event.allDay,
         location: event.location || '',
       });
@@ -279,8 +288,12 @@ const CalendarPage: React.FC = () => {
     handleOpen();
   };
 
-  const handleEventClick = (event: CalendarEvent) => {
-    handleOpen(event);
+  const handleEventClick = (calendarEvent: CalendarEvent) => {
+    if (calendarEvent.type === 'task') {
+      navigate('/tasks');
+    } else {
+      handleOpen(calendarEvent);
+    }
   };
 
   return (
@@ -396,7 +409,7 @@ const CalendarPage: React.FC = () => {
               label="Date de fin"
               type="date"
               value={formData.endDate}
-              onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, endDate: e.target.value})}
               margin="normal"
               InputLabelProps={{ shrink: true }}
               required
