@@ -27,6 +27,7 @@ const Login: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error } = useSelector((state: RootState) => state.auth);
+  const themeMode = useSelector((state: RootState) => state.theme.mode);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +80,7 @@ const Login: React.FC = () => {
                 width: 60,
                 height: 60,
                 borderRadius: '50%',
-                backgroundColor: 'primary.main',
+                backgroundColor: themeMode === 'dark' ? '#1976d2' : 'primary.main',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -95,7 +96,7 @@ const Login: React.FC = () => {
             variant="h5"
             sx={{
               fontWeight: 600,
-              color: 'primary.main',
+              color: themeMode === 'dark' ? '#90caf9' : 'primary.main',
               mb: 3,
             }}
           >
@@ -119,8 +120,12 @@ const Login: React.FC = () => {
             sx={{
               p: 4,
               width: '100%',
-              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+              background: themeMode === 'dark'
+                ? 'linear-gradient(145deg, #23272b 0%, #181a1b 100%)'
+                : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
               borderRadius: 2,
+              color: themeMode === 'dark' ? '#fff' : 'inherit',
+              boxShadow: themeMode === 'dark' ? '0 4px 12px rgba(0,0,0,0.7)' : undefined,
             }}
           >
             <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
@@ -136,13 +141,24 @@ const Login: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 InputProps={{
-                  startAdornment: <EmailIcon sx={{ mr: 1, color: 'primary.main' }} />,
+                  startAdornment: <EmailIcon sx={{ mr: 1, color: themeMode === 'dark' ? '#90caf9' : 'primary.main' }} />,
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    '&:hover fieldset': {
-                      borderColor: 'primary.main',
+                    background: themeMode === 'dark' ? '#223040' : undefined,
+                    color: themeMode === 'dark' ? '#fff' : undefined,
+                    '& fieldset': {
+                      borderColor: themeMode === 'dark' ? 'rgba(255,255,255,0.23)' : undefined,
                     },
+                    '&:hover fieldset': {
+                      borderColor: themeMode === 'dark' ? '#90caf9' : undefined,
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: themeMode === 'dark' ? 'rgba(255,255,255,0.7)' : undefined,
+                  },
+                  input: {
+                    color: themeMode === 'dark' ? '#fff' : undefined,
                   },
                 }}
               />
@@ -158,13 +174,24 @@ const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 InputProps={{
-                  startAdornment: <LockIcon sx={{ mr: 1, color: 'primary.main' }} />,
+                  startAdornment: <LockIcon sx={{ mr: 1, color: themeMode === 'dark' ? '#90caf9' : 'primary.main' }} />,
                 }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    '&:hover fieldset': {
-                      borderColor: 'primary.main',
+                    background: themeMode === 'dark' ? '#223040' : undefined,
+                    color: themeMode === 'dark' ? '#fff' : undefined,
+                    '& fieldset': {
+                      borderColor: themeMode === 'dark' ? 'rgba(255,255,255,0.23)' : undefined,
                     },
+                    '&:hover fieldset': {
+                      borderColor: themeMode === 'dark' ? '#90caf9' : undefined,
+                    },
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: themeMode === 'dark' ? 'rgba(255,255,255,0.7)' : undefined,
+                  },
+                  input: {
+                    color: themeMode === 'dark' ? '#fff' : undefined,
                   },
                 }}
               />
@@ -176,10 +203,17 @@ const Login: React.FC = () => {
                   mt: 3,
                   mb: 2,
                   py: 1.5,
-                  background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                  boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+                  background: themeMode === 'dark'
+                    ? 'linear-gradient(45deg, #1976d2 30%, #21CBF3 90%)'
+                    : 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                  boxShadow: themeMode === 'dark'
+                    ? '0 3px 5px 2px rgba(33, 203, 243, .15)'
+                    : '0 3px 5px 2px rgba(33, 203, 243, .3)',
+                  color: '#fff',
                   '&:hover': {
-                    background: 'linear-gradient(45deg, #1976D2 30%, #1E88E5 90%)',
+                    background: themeMode === 'dark'
+                      ? 'linear-gradient(45deg, #1565c0 30%, #1976d2 90%)'
+                      : 'linear-gradient(45deg, #1976D2 30%, #1E88E5 90%)',
                   },
                 }}
                 disabled={loading}
@@ -187,20 +221,27 @@ const Login: React.FC = () => {
                 {loading ? 'Connexion...' : 'Se connecter'}
               </Button>
               <Box sx={{ textAlign: 'center' }}>
-                <Link
-                  component={RouterLink}
-                  to="/register"
-                  variant="body2"
-                  sx={{
-                    color: 'primary.main',
-                    textDecoration: 'none',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    },
+                <span
+                  style={{
+                    color: themeMode === 'dark' ? '#90caf9' : 'primary.main',
+                    fontSize: 14,
                   }}
                 >
-                  {"Pas encore de compte ? S'inscrire"}
-                </Link>
+                  <Link
+                    component={RouterLink}
+                    to="/register"
+                    variant="body2"
+                    sx={{
+                      color: themeMode === 'dark' ? '#90caf9' : 'primary.main',
+                      textDecoration: 'none',
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    {"Pas encore de compte ? S'inscrire"}
+                  </Link>
+                </span>
               </Box>
             </Box>
           </Paper>

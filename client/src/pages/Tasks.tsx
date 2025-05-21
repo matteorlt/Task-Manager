@@ -48,6 +48,7 @@ const Tasks: React.FC = () => {
   const { tasks, loading } = useSelector((state: RootState) => state.tasks);
   const { token } = useSelector((state: RootState) => state.auth);
   const { events, loading: eventsLoading } = useSelector((state: RootState) => state.events);
+  const themeMode = useSelector((state: RootState) => state.theme.mode);
   const [open, setOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -348,28 +349,54 @@ const Tasks: React.FC = () => {
   };
 
   const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'HIGH':
-        return 'error';
-      case 'MEDIUM':
-        return 'warning';
-      case 'LOW':
-        return 'success';
-      default:
-        return 'default';
+    if (themeMode === 'dark') {
+      switch (priority) {
+        case 'HIGH':
+          return '#f44336';
+        case 'MEDIUM':
+          return '#ff9800';
+        case 'LOW':
+          return '#4caf50';
+        default:
+          return '#757575';
+      }
+    } else {
+      switch (priority) {
+        case 'HIGH':
+          return '#ef5350';
+        case 'MEDIUM':
+          return '#ffa726';
+        case 'LOW':
+          return '#66bb6a';
+        default:
+          return '#bdbdbd';
+      }
     }
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'DONE':
-        return 'success';
-      case 'IN_PROGRESS':
-        return 'warning';
-      case 'TODO':
-        return 'info';
-      default:
-        return 'default';
+    if (themeMode === 'dark') {
+      switch (status) {
+        case 'DONE':
+          return '#4caf50';
+        case 'IN_PROGRESS':
+          return '#ff9800';
+        case 'TODO':
+          return '#2196f3';
+        default:
+          return '#757575';
+      }
+    } else {
+      switch (status) {
+        case 'DONE':
+          return '#66bb6a';
+        case 'IN_PROGRESS':
+          return '#ffa726';
+        case 'TODO':
+          return '#42a5f5';
+        default:
+          return '#bdbdbd';
+      }
     }
   };
 
@@ -429,7 +456,9 @@ const Tasks: React.FC = () => {
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
-                    background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+                    background: themeMode === 'dark' 
+                      ? 'linear-gradient(145deg, #1e1e1e 0%, #2d2d2d 100%)'
+                      : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
                     position: 'relative',
                     overflow: 'visible',
                     '&::before': {
@@ -451,7 +480,7 @@ const Tasks: React.FC = () => {
                       gutterBottom
                       sx={{
                         fontWeight: 600,
-                        color: 'text.primary',
+                        color: themeMode === 'dark' ? '#fff' : 'text.primary',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1,
@@ -460,7 +489,7 @@ const Tasks: React.FC = () => {
                       {task.title}
                     </Typography>
                     <Typography
-                      color="textSecondary"
+                      color={themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary'}
                       gutterBottom
                       sx={{
                         mb: 2,
@@ -473,35 +502,37 @@ const Tasks: React.FC = () => {
                     <Box display="flex" gap={1} mb={2}>
                       <Chip
                         label={task.status}
-                        color={getStatusColor(task.status)}
-                        size="small"
                         sx={{
+                          bgcolor: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : undefined,
+                          color: getStatusColor(task.status),
                           fontWeight: 500,
                           '& .MuiChip-label': {
                             px: 1,
                           },
                         }}
+                        size="small"
                       />
                       <Chip
                         label={task.priority}
-                        color={getPriorityColor(task.priority)}
-                        size="small"
                         sx={{
+                          bgcolor: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : undefined,
+                          color: getPriorityColor(task.priority),
                           fontWeight: 500,
                           '& .MuiChip-label': {
                             px: 1,
                           },
                         }}
+                        size="small"
                       />
                     </Box>
                     <Typography
                       variant="body2"
-                      color="textSecondary"
                       sx={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1,
                         mb: 1,
+                        color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary',
                       }}
                     >
                       <CalendarTodayIcon fontSize="small" />
@@ -510,12 +541,12 @@ const Tasks: React.FC = () => {
                     {task.category && (
                       <Typography
                         variant="body2"
-                        color="textSecondary"
                         sx={{
                           display: 'flex',
                           alignItems: 'center',
                           gap: 1,
                           mb: 1,
+                          color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary',
                         }}
                       >
                         <CategoryIcon fontSize="small" />
@@ -530,10 +561,14 @@ const Tasks: React.FC = () => {
                             label={tag}
                             size="small"
                             sx={{
-                              backgroundColor: 'rgba(33, 150, 243, 0.1)',
-                              color: 'primary.main',
+                              backgroundColor: themeMode === 'dark' 
+                                ? 'rgba(33, 150, 243, 0.15)'
+                                : 'rgba(33, 150, 243, 0.1)',
+                              color: themeMode === 'dark' ? '#90caf9' : 'primary.main',
                               '&:hover': {
-                                backgroundColor: 'rgba(33, 150, 243, 0.2)',
+                                backgroundColor: themeMode === 'dark'
+                                  ? 'rgba(33, 150, 243, 0.25)'
+                                  : 'rgba(33, 150, 243, 0.2)',
                               },
                             }}
                           />
@@ -546,7 +581,9 @@ const Tasks: React.FC = () => {
                       size="small"
                       startIcon={<EditIcon />}
                       onClick={() => handleOpen(task)}
-                      sx={{ color: 'primary.main' }}
+                      sx={{ 
+                        color: themeMode === 'dark' ? '#90caf9' : 'primary.main',
+                      }}
                     >
                       Modifier
                     </Button>
@@ -554,7 +591,9 @@ const Tasks: React.FC = () => {
                       size="small"
                       startIcon={<DeleteIcon />}
                       onClick={() => handleDelete(task.id)}
-                      sx={{ color: 'error.main' }}
+                      sx={{ 
+                        color: themeMode === 'dark' ? '#f48fb1' : 'error.main',
+                      }}
                     >
                       Supprimer
                     </Button>
@@ -567,29 +606,60 @@ const Tasks: React.FC = () => {
       </Grid>
 
       {/* Section Événements */}
-      <Typography variant="h5" mt={4} mb={2}>Événements</Typography>
+      <Typography variant="h5" mt={4} mb={2} sx={{ color: themeMode === 'dark' ? '#fff' : 'text.primary' }}>
+        Événements
+      </Typography>
       <Grid container spacing={3}>
         {events.map((event: Event) => (
           <Grid item xs={12} sm={6} md={4} key={event.id}>
-            <Card>
+            <Card sx={{
+              background: themeMode === 'dark' 
+                ? 'linear-gradient(145deg, #1e1e1e 0%, #2d2d2d 100%)'
+                : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+            }}>
               <CardContent>
-                <Typography variant="h6" gutterBottom>{event.title}</Typography>
-                <Typography color="textSecondary" gutterBottom>{event.description}</Typography>
-                <Typography variant="body2" color="textSecondary">
+                <Typography 
+                  variant="h6" 
+                  gutterBottom
+                  sx={{ color: themeMode === 'dark' ? '#fff' : 'text.primary' }}
+                >
+                  {event.title}
+                </Typography>
+                <Typography 
+                  color={themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary'} 
+                  gutterBottom
+                >
+                  {event.description}
+                </Typography>
+                <Typography 
+                  variant="body2" 
+                  sx={{ color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary' }}
+                >
                   Début : {formatDate(event.startDate || (event as any)['start_date'])}<br />
                   Fin : {formatDate(event.endDate || (event as any)['end_date'])}
                 </Typography>
                 {event.location && (
-                  <Typography variant="body2" color="textSecondary">
+                  <Typography 
+                    variant="body2" 
+                    sx={{ color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary' }}
+                  >
                     Lieu : {event.location}
                   </Typography>
                 )}
               </CardContent>
               <CardActions>
-                <IconButton size="small" onClick={() => handleOpenEvent(event)}>
+                <IconButton 
+                  size="small" 
+                  onClick={() => handleOpenEvent(event)}
+                  sx={{ color: themeMode === 'dark' ? '#90caf9' : 'primary.main' }}
+                >
                   <EditIcon />
                 </IconButton>
-                <IconButton size="small" onClick={() => handleDeleteEvent(event.id)}>
+                <IconButton 
+                  size="small" 
+                  onClick={() => handleDeleteEvent(event.id)}
+                  sx={{ color: themeMode === 'dark' ? '#f48fb1' : 'error.main' }}
+                >
                   <DeleteIcon />
                 </IconButton>
               </CardActions>

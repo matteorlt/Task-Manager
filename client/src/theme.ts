@@ -1,20 +1,25 @@
-import { createTheme } from '@mui/material/styles';
+import { createTheme, ThemeOptions } from '@mui/material/styles';
 
-export const theme = createTheme({
+const getThemeOptions = (mode: 'light' | 'dark'): ThemeOptions => ({
   palette: {
+    mode,
     primary: {
-      main: '#2196f3',
-      light: '#64b5f6',
-      dark: '#1976d2',
+      main: mode === 'light' ? '#2196f3' : '#90caf9',
+      light: mode === 'light' ? '#64b5f6' : '#e3f2fd',
+      dark: mode === 'light' ? '#1976d2' : '#42a5f5',
     },
     secondary: {
-      main: '#f50057',
-      light: '#ff4081',
-      dark: '#c51162',
+      main: mode === 'light' ? '#f50057' : '#f48fb1',
+      light: mode === 'light' ? '#ff4081' : '#fce4ec',
+      dark: mode === 'light' ? '#c51162' : '#f06292',
     },
     background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
+      default: mode === 'light' ? '#f5f5f5' : '#121212',
+      paper: mode === 'light' ? '#ffffff' : '#1e1e1e',
+    },
+    text: {
+      primary: mode === 'light' ? 'rgba(0, 0, 0, 0.87)' : '#ffffff',
+      secondary: mode === 'light' ? 'rgba(0, 0, 0, 0.6)' : 'rgba(255, 255, 255, 0.7)',
     },
   },
   typography: {
@@ -59,7 +64,9 @@ export const theme = createTheme({
           transition: 'all 0.3s ease',
           '&:hover': {
             transform: 'translateY(-2px)',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+            boxShadow: mode === 'light' 
+              ? '0 4px 8px rgba(0, 0, 0, 0.1)'
+              : '0 4px 8px rgba(255, 255, 255, 0.1)',
           },
         },
       },
@@ -68,11 +75,15 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          boxShadow: mode === 'light'
+            ? '0 4px 6px rgba(0, 0, 0, 0.1)'
+            : '0 4px 6px rgba(0, 0, 0, 0.3)',
           transition: 'all 0.3s ease',
           '&:hover': {
             transform: 'translateY(-4px)',
-            boxShadow: '0 8px 12px rgba(0, 0, 0, 0.15)',
+            boxShadow: mode === 'light'
+              ? '0 8px 12px rgba(0, 0, 0, 0.15)'
+              : '0 8px 12px rgba(0, 0, 0, 0.4)',
           },
         },
       },
@@ -92,7 +103,9 @@ export const theme = createTheme({
         root: {
           transition: 'all 0.3s ease',
           '&:hover': {
-            boxShadow: '0 6px 12px rgba(0, 0, 0, 0.1)',
+            boxShadow: mode === 'light'
+              ? '0 6px 12px rgba(0, 0, 0, 0.1)'
+              : '0 6px 12px rgba(0, 0, 0, 0.3)',
           },
         },
       },
@@ -102,7 +115,9 @@ export const theme = createTheme({
         root: {
           transition: 'all 0.2s ease',
           '&:hover': {
-            backgroundColor: 'rgba(33, 150, 243, 0.08)',
+            backgroundColor: mode === 'light'
+              ? 'rgba(33, 150, 243, 0.08)'
+              : 'rgba(144, 202, 249, 0.08)',
             transform: 'translateX(4px)',
           },
         },
@@ -124,7 +139,7 @@ export const theme = createTheme({
   shape: {
     borderRadius: 8,
   },
-  shadows: [
+  shadows: mode === 'light' ? [
     'none',
     '0 2px 4px rgba(0,0,0,0.05)',
     '0 4px 6px rgba(0,0,0,0.07)',
@@ -150,5 +165,33 @@ export const theme = createTheme({
     '0 44px 46px rgba(0,0,0,0.27)',
     '0 46px 48px rgba(0,0,0,0.28)',
     '0 48px 50px rgba(0,0,0,0.29)',
+  ] : [
+    'none',
+    '0 2px 4px rgba(0,0,0,0.2)',
+    '0 4px 6px rgba(0,0,0,0.3)',
+    '0 6px 8px rgba(0,0,0,0.4)',
+    '0 8px 10px rgba(0,0,0,0.5)',
+    '0 10px 12px rgba(0,0,0,0.6)',
+    '0 12px 14px rgba(0,0,0,0.7)',
+    '0 14px 16px rgba(0,0,0,0.8)',
+    '0 16px 18px rgba(0,0,0,0.9)',
+    '0 18px 20px rgba(0,0,0,1)',
+    '0 20px 22px rgba(0,0,0,1.1)',
+    '0 22px 24px rgba(0,0,0,1.2)',
+    '0 24px 26px rgba(0,0,0,1.3)',
+    '0 26px 28px rgba(0,0,0,1.4)',
+    '0 28px 30px rgba(0,0,0,1.5)',
+    '0 30px 32px rgba(0,0,0,1.6)',
+    '0 32px 34px rgba(0,0,0,1.7)',
+    '0 34px 36px rgba(0,0,0,1.8)',
+    '0 36px 38px rgba(0,0,0,1.9)',
+    '0 38px 40px rgba(0,0,0,2)',
+    '0 40px 42px rgba(0,0,0,2.1)',
+    '0 42px 44px rgba(0,0,0,2.2)',
+    '0 44px 46px rgba(0,0,0,2.3)',
+    '0 46px 48px rgba(0,0,0,2.4)',
+    '0 48px 50px rgba(0,0,0,2.5)',
   ],
-}); 
+});
+
+export const createAppTheme = (mode: 'light' | 'dark') => createTheme(getThemeOptions(mode)); 

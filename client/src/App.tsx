@@ -2,9 +2,9 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Provider, useDispatch } from 'react-redux';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import { store } from './store';
-import { theme } from './theme';
+import { createAppTheme } from './theme';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
@@ -14,6 +14,7 @@ import Register from './pages/Register';
 import PrivateRoute from './components/PrivateRoute';
 import { loginSuccess } from './store/slices/authSlice';
 import { AnimatePresence, motion } from 'framer-motion';
+import { RootState } from './store';
 
 type AuthLoaderProps = { children: React.ReactNode };
 
@@ -56,17 +57,26 @@ const AnimatedRoutes = () => {
   );
 };
 
+const AppContent: React.FC = () => {
+  const themeMode = useSelector((state: RootState) => state.theme.mode);
+  const theme = createAppTheme(themeMode);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <AuthLoader>
+        <Router>
+          <AnimatedRoutes />
+        </Router>
+      </AuthLoader>
+    </ThemeProvider>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <AuthLoader>
-          <Router>
-            <AnimatedRoutes />
-          </Router>
-        </AuthLoader>
-      </ThemeProvider>
+      <AppContent />
     </Provider>
   );
 };

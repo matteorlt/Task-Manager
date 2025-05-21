@@ -77,6 +77,7 @@ const CalendarPage: React.FC = () => {
   const { events, loading: eventsLoading } = useSelector((state: RootState) => state.events);
   const { tasks, loading: tasksLoading } = useSelector((state: RootState) => state.tasks);
   const { token } = useSelector((state: RootState) => state.auth);
+  const themeMode = useSelector((state: RootState) => state.theme.mode);
   const [open, setOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -326,7 +327,7 @@ const CalendarPage: React.FC = () => {
             variant="h4"
             sx={{
               fontWeight: 600,
-              color: 'primary.main',
+              color: themeMode === 'dark' ? '#fff' : 'primary.main',
               display: 'flex',
               alignItems: 'center',
               gap: 2,
@@ -356,9 +357,59 @@ const CalendarPage: React.FC = () => {
           <Paper
             sx={{
               p: 3,
-              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+              background: themeMode === 'dark'
+                ? 'linear-gradient(145deg, #1e1e1e 0%, #2d2d2d 100%)'
+                : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
               borderRadius: 2,
               boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              '& .rbc-calendar': {
+                color: themeMode === 'dark' ? '#fff' : 'inherit',
+              },
+              '& .rbc-toolbar button': {
+                color: themeMode === 'dark' ? '#fff' : 'inherit',
+                backgroundColor: themeMode === 'dark' ? '#333' : '#fff',
+                borderColor: themeMode === 'dark' ? '#444' : '#ccc',
+                '&:hover': {
+                  backgroundColor: themeMode === 'dark' ? '#444' : '#f0f0f0',
+                },
+                '&:active, &.rbc-active': {
+                  backgroundColor: themeMode === 'dark' ? '#505050' : '#e6e6e6',
+                  borderColor: themeMode === 'dark' ? '#666' : '#adadad',
+                },
+              },
+              '& .rbc-month-view': {
+                border: themeMode === 'dark' ? '1px solid #444' : '1px solid #ddd',
+              },
+              '& .rbc-header': {
+                backgroundColor: themeMode === 'dark' ? '#333' : '#f5f5f5',
+                color: themeMode === 'dark' ? '#fff' : 'inherit',
+                borderBottom: themeMode === 'dark' ? '1px solid #444' : '1px solid #ddd',
+              },
+              '& .rbc-day-bg': {
+                backgroundColor: themeMode === 'dark' ? '#1e1e1e' : '#fff',
+                '&:hover': {
+                  backgroundColor: themeMode === 'dark' ? '#2d2d2d' : '#f5f5f5',
+                },
+              },
+              '& .rbc-off-range-bg': {
+                backgroundColor: themeMode === 'dark' ? '#141414' : '#f5f5f5',
+              },
+              '& .rbc-today': {
+                backgroundColor: themeMode === 'dark' ? '#333' : '#eaf6ff',
+              },
+              '& .rbc-event': {
+                backgroundColor: themeMode === 'dark' ? '#2196f3' : '#3174ad',
+                '&:hover': {
+                  backgroundColor: themeMode === 'dark' ? '#1976d2' : '#265985',
+                },
+              },
+              '& .rbc-show-more': {
+                color: themeMode === 'dark' ? '#90caf9' : '#3174ad',
+                backgroundColor: 'transparent',
+              },
+              '& .rbc-current-time-indicator': {
+                backgroundColor: themeMode === 'dark' ? '#f50057' : '#74ad31',
+              },
             }}
           >
             <Calendar<CalendarEvent>
@@ -372,10 +423,12 @@ const CalendarPage: React.FC = () => {
               selectable
               eventPropGetter={(event) => ({
                 style: {
-                  backgroundColor: event.type === 'task' ? '#f50057' : '#4caf50',
+                  backgroundColor: event.type === 'task' 
+                    ? (themeMode === 'dark' ? '#f50057' : '#f44336')
+                    : (themeMode === 'dark' ? '#4caf50' : '#66bb6a'),
                   borderRadius: '4px',
                   opacity: 0.8,
-                  color: 'white',
+                  color: '#fff',
                   border: '0px',
                   display: 'block',
                   padding: '2px 4px',
@@ -481,8 +534,19 @@ const CalendarPage: React.FC = () => {
         </motion.div>
       </motion.div>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
+      <Dialog 
+        open={open} 
+        onClose={handleClose} 
+        maxWidth="sm" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            backgroundColor: themeMode === 'dark' ? '#1e1e1e' : '#fff',
+            color: themeMode === 'dark' ? '#fff' : 'inherit',
+          }
+        }}
+      >
+        <DialogTitle sx={{ color: themeMode === 'dark' ? '#fff' : 'inherit' }}>
           {selectedEvent ? 'Modifier l\'événement' : 'Nouvel événement'}
         </DialogTitle>
         <form onSubmit={handleSubmit}>
@@ -500,6 +564,22 @@ const CalendarPage: React.FC = () => {
               margin="normal"
               required
               error={!!error && !formData.title}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  '& fieldset': {
+                    borderColor: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.23)' : undefined,
+                  },
+                  '&:hover fieldset': {
+                    borderColor: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.4)' : undefined,
+                  },
+                },
+                '& .MuiInputLabel-root': {
+                  color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : undefined,
+                },
+                '& .MuiOutlinedInput-input': {
+                  color: themeMode === 'dark' ? '#fff' : undefined,
+                },
+              }}
             />
             <TextField
               fullWidth
@@ -541,8 +621,18 @@ const CalendarPage: React.FC = () => {
             />
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleClose}>Annuler</Button>
-            <Button type="submit" variant="contained">
+            <Button onClick={handleClose} sx={{ color: themeMode === 'dark' ? '#fff' : undefined }}>
+              Annuler
+            </Button>
+            <Button 
+              type="submit" 
+              variant="contained"
+              sx={{
+                background: themeMode === 'dark' 
+                  ? 'linear-gradient(45deg, #90caf9 30%, #64b5f6 90%)'
+                  : 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+              }}
+            >
               {selectedEvent ? 'Modifier' : 'Créer'}
             </Button>
           </DialogActions>

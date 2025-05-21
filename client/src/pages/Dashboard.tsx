@@ -24,6 +24,7 @@ import {
 const Dashboard: React.FC = () => {
   const { tasks, loading: tasksLoading } = useSelector((state: RootState) => state.tasks);
   const { events, loading: eventsLoading } = useSelector((state: RootState) => state.events);
+  const themeMode = useSelector((state: RootState) => state.theme.mode);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -72,7 +73,7 @@ const Dashboard: React.FC = () => {
           gutterBottom
           sx={{
             fontWeight: 600,
-            color: 'primary.main',
+            color: themeMode === 'dark' ? '#90caf9' : 'primary.main',
             mb: 4,
             display: 'flex',
             alignItems: 'center',
@@ -94,9 +95,12 @@ const Dashboard: React.FC = () => {
                 sx={{
                   p: 3,
                   height: '100%',
-                  background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+                  background: themeMode === 'dark'
+                    ? 'linear-gradient(145deg, #23272b 0%, #181a1b 100%)'
+                    : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
                   position: 'relative',
                   overflow: 'hidden',
+                  color: themeMode === 'dark' ? '#fff' : 'inherit',
                   '&::before': {
                     content: '""',
                     position: 'absolute',
@@ -115,7 +119,7 @@ const Dashboard: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
-                    color: 'primary.main',
+                    color: themeMode === 'dark' ? '#90caf9' : 'primary.main',
                     fontWeight: 600,
                   }}
                 >
@@ -136,9 +140,10 @@ const Dashboard: React.FC = () => {
                           mb: 1,
                           transition: 'all 0.2s ease',
                           '&:hover': {
-                            backgroundColor: 'rgba(33, 150, 243, 0.08)',
+                            backgroundColor: themeMode === 'dark' ? 'rgba(144,202,249,0.08)' : 'rgba(33, 150, 243, 0.08)',
                             transform: 'translateX(4px)',
                           },
+                          color: themeMode === 'dark' ? '#fff' : 'inherit',
                         }}
                       >
                         <ListItemText
@@ -146,15 +151,19 @@ const Dashboard: React.FC = () => {
                           secondary={`Date limite: ${formatDate(task.dueDate)}`}
                           primaryTypographyProps={{
                             fontWeight: 500,
+                            color: themeMode === 'dark' ? '#fff' : 'inherit',
+                          }}
+                          secondaryTypographyProps={{
+                            color: themeMode === 'dark' ? 'rgba(255,255,255,0.7)' : 'text.secondary',
                           }}
                         />
                       </ListItem>
-                      {index < upcomingTasks.length - 1 && <Divider />}
+                      {index < upcomingTasks.length - 1 && <Divider sx={{ borderColor: themeMode === 'dark' ? '#333' : undefined }} />}
                     </motion.div>
                   ))}
                   {upcomingTasks.length === 0 && (
                     <ListItem>
-                      <ListItemText primary="Aucune tâche à venir" />
+                      <ListItemText primary="Aucune tâche à venir" sx={{ color: themeMode === 'dark' ? '#fff' : 'inherit' }} />
                     </ListItem>
                   )}
                 </List>
@@ -172,9 +181,12 @@ const Dashboard: React.FC = () => {
                 sx={{
                   p: 3,
                   height: '100%',
-                  background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+                  background: themeMode === 'dark'
+                    ? 'linear-gradient(145deg, #23272b 0%, #181a1b 100%)'
+                    : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
                   position: 'relative',
                   overflow: 'hidden',
+                  color: themeMode === 'dark' ? '#fff' : 'inherit',
                   '&::before': {
                     content: '""',
                     position: 'absolute',
@@ -193,7 +205,7 @@ const Dashboard: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
-                    color: 'secondary.main',
+                    color: themeMode === 'dark' ? '#f48fb1' : 'secondary.main',
                     fontWeight: 600,
                   }}
                 >
@@ -214,9 +226,10 @@ const Dashboard: React.FC = () => {
                           mb: 1,
                           transition: 'all 0.2s ease',
                           '&:hover': {
-                            backgroundColor: 'rgba(245, 0, 87, 0.08)',
+                            backgroundColor: themeMode === 'dark' ? 'rgba(245,0,87,0.08)' : 'rgba(245, 0, 87, 0.08)',
                             transform: 'translateX(4px)',
                           },
+                          color: themeMode === 'dark' ? '#fff' : 'inherit',
                         }}
                       >
                         <ListItemText
@@ -224,15 +237,19 @@ const Dashboard: React.FC = () => {
                           secondary={`Débute le : ${formatDate(event.startDate || (event as any)['start_date'])}`}
                           primaryTypographyProps={{
                             fontWeight: 500,
+                            color: themeMode === 'dark' ? '#fff' : 'inherit',
+                          }}
+                          secondaryTypographyProps={{
+                            color: themeMode === 'dark' ? 'rgba(255,255,255,0.7)' : 'text.secondary',
                           }}
                         />
                       </ListItem>
-                      {index < upcomingEvents.length - 1 && <Divider />}
+                      {index < upcomingEvents.length - 1 && <Divider sx={{ borderColor: themeMode === 'dark' ? '#333' : undefined }} />}
                     </motion.div>
                   ))}
                   {upcomingEvents.length === 0 && (
                     <ListItem>
-                      <ListItemText primary="Aucun événement à venir" />
+                      <ListItemText primary="Aucun événement à venir" sx={{ color: themeMode === 'dark' ? '#fff' : 'inherit' }} />
                     </ListItem>
                   )}
                 </List>
@@ -249,9 +266,12 @@ const Dashboard: React.FC = () => {
               <Paper
                 sx={{
                   p: 3,
-                  background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+                  background: themeMode === 'dark'
+                    ? 'linear-gradient(145deg, #23272b 0%, #181a1b 100%)'
+                    : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
                   position: 'relative',
                   overflow: 'hidden',
+                  color: themeMode === 'dark' ? '#fff' : 'inherit',
                   '&::before': {
                     content: '""',
                     position: 'absolute',
@@ -270,7 +290,7 @@ const Dashboard: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 1,
-                    color: 'success.main',
+                    color: themeMode === 'dark' ? '#81c784' : 'success.main',
                     fontWeight: 600,
                   }}
                 >
@@ -278,14 +298,14 @@ const Dashboard: React.FC = () => {
                   Progression des tâches
                 </Typography>
                 <Box sx={{ mt: 2 }}>
-                  <Typography variant="body1" gutterBottom>
+                  <Typography variant="body1" gutterBottom sx={{ color: themeMode === 'dark' ? '#fff' : 'inherit' }}>
                     Taux de complétion: {completionRate.toFixed(1)}%
                   </Typography>
                   <Box
                     sx={{
                       width: '100%',
                       height: 8,
-                      backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                      backgroundColor: themeMode === 'dark' ? '#222' : 'rgba(0, 0, 0, 0.1)',
                       borderRadius: 4,
                       overflow: 'hidden',
                     }}
@@ -300,7 +320,7 @@ const Dashboard: React.FC = () => {
                       }}
                     />
                   </Box>
-                  <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+                  <Typography variant="body2" sx={{ mt: 1, color: themeMode === 'dark' ? 'rgba(255,255,255,0.7)' : 'text.secondary' }}>
                     {completedTasks} tâches complétées sur {totalTasks}
                   </Typography>
                 </Box>
