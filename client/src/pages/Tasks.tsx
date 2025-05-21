@@ -37,6 +37,8 @@ import { Task } from '../store/slices/taskSlice';
 import { formatDate, formatDateForInput, formatDateForServer } from '../utils/dateUtils';
 import { fetchEventsStart, fetchEventsSuccess, fetchEventsFailure, updateEvent, deleteEvent } from '../store/slices/eventSlice';
 import { Event } from '../store/slices/eventSlice';
+import { motion } from 'framer-motion';
+import { CalendarToday as CalendarTodayIcon, Category as CategoryIcon } from '@mui/icons-material';
 
 const TASKS_URL = 'http://localhost:3000/api/tasks';
 const EVENTS_URL = 'http://localhost:3000/api/events';
@@ -396,66 +398,169 @@ const Tasks: React.FC = () => {
       </Snackbar>
 
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Tâches</Typography>
+        <Typography variant="h4" sx={{ fontWeight: 600, color: 'primary.main' }}>
+          Tâches
+        </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={() => handleOpen()}
+          sx={{
+            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+            boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+          }}
         >
           Nouvelle tâche
         </Button>
       </Box>
 
       <Grid container spacing={3}>
-        {tasks.map((task) => {
+        {tasks.map((task, index) => {
           const tags = Array.isArray(task.tags) ? task.tags : [];
           return (
             <Grid item xs={12} sm={6} md={4} key={task.id}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    {task.title}
-                  </Typography>
-                  <Typography color="textSecondary" gutterBottom>
-                    {task.description}
-                  </Typography>
-                  <Box display="flex" gap={1} mb={1}>
-                    <Chip
-                      label={task.status}
-                      color={getStatusColor(task.status)}
-                      size="small"
-                    />
-                    <Chip
-                      label={task.priority}
-                      color={getPriorityColor(task.priority)}
-                      size="small"
-                    />
-                  </Box>
-                  <Typography variant="body2" color="textSecondary">
-                    Date limite: {formatDate(task.dueDate)}
-                  </Typography>
-                  {task.category && (
-                    <Typography variant="body2" color="textSecondary">
-                      Catégorie: {task.category}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.1 }}
+              >
+                <Card
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+                    position: 'relative',
+                    overflow: 'visible',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      height: '4px',
+                      background: `linear-gradient(90deg, ${getPriorityColor(task.priority)} 0%, ${getStatusColor(task.status)} 100%)`,
+                      borderTopLeftRadius: '12px',
+                      borderTopRightRadius: '12px',
+                    },
+                  }}
+                >
+                  <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                    <Typography
+                      variant="h6"
+                      gutterBottom
+                      sx={{
+                        fontWeight: 600,
+                        color: 'text.primary',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                      }}
+                    >
+                      {task.title}
                     </Typography>
-                  )}
-                  {tags.length > 0 && (
-                    <Box display="flex" gap={0.5} mt={1} flexWrap="wrap">
-                      {tags.map((tag, index) => (
-                        <Chip key={index} label={tag} size="small" />
-                      ))}
+                    <Typography
+                      color="textSecondary"
+                      gutterBottom
+                      sx={{
+                        mb: 2,
+                        fontSize: '0.9rem',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {task.description}
+                    </Typography>
+                    <Box display="flex" gap={1} mb={2}>
+                      <Chip
+                        label={task.status}
+                        color={getStatusColor(task.status)}
+                        size="small"
+                        sx={{
+                          fontWeight: 500,
+                          '& .MuiChip-label': {
+                            px: 1,
+                          },
+                        }}
+                      />
+                      <Chip
+                        label={task.priority}
+                        color={getPriorityColor(task.priority)}
+                        size="small"
+                        sx={{
+                          fontWeight: 500,
+                          '& .MuiChip-label': {
+                            px: 1,
+                          },
+                        }}
+                      />
                     </Box>
-                  )}
-                </CardContent>
-                <CardActions>
-                  <IconButton size="small" onClick={() => handleOpen(task)}>
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton size="small" onClick={() => handleDelete(task.id)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </CardActions>
-              </Card>
+                    <Typography
+                      variant="body2"
+                      color="textSecondary"
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        mb: 1,
+                      }}
+                    >
+                      <CalendarTodayIcon fontSize="small" />
+                      Date limite: {formatDate(task.dueDate)}
+                    </Typography>
+                    {task.category && (
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1,
+                          mb: 1,
+                        }}
+                      >
+                        <CategoryIcon fontSize="small" />
+                        Catégorie: {task.category}
+                      </Typography>
+                    )}
+                    {tags.length > 0 && (
+                      <Box display="flex" gap={0.5} mt={2} flexWrap="wrap">
+                        {tags.map((tag, index) => (
+                          <Chip
+                            key={index}
+                            label={tag}
+                            size="small"
+                            sx={{
+                              backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                              color: 'primary.main',
+                              '&:hover': {
+                                backgroundColor: 'rgba(33, 150, 243, 0.2)',
+                              },
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    )}
+                  </CardContent>
+                  <CardActions sx={{ p: 2, pt: 0 }}>
+                    <Button
+                      size="small"
+                      startIcon={<EditIcon />}
+                      onClick={() => handleOpen(task)}
+                      sx={{ color: 'primary.main' }}
+                    >
+                      Modifier
+                    </Button>
+                    <Button
+                      size="small"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDelete(task.id)}
+                      sx={{ color: 'error.main' }}
+                    >
+                      Supprimer
+                    </Button>
+                  </CardActions>
+                </Card>
+              </motion.div>
             </Grid>
           );
         })}

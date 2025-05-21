@@ -16,7 +16,7 @@ import {
   Switch,
   Alert,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import { Add as AddIcon, CalendarToday as CalendarIcon, Event as EventIcon } from '@mui/icons-material';
 import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
 import format from 'date-fns/format';
 import parse from 'date-fns/parse';
@@ -41,6 +41,7 @@ import {
 import { Event } from '../store/slices/eventSlice';
 import { Task } from '../store/slices/taskSlice';
 import { formatDate, formatDateForInput, formatDateForServer } from '../utils/dateUtils';
+import { motion } from 'framer-motion';
 
 // Type commun pour les événements du calendrier
 interface CalendarEvent {
@@ -315,71 +316,170 @@ const CalendarPage: React.FC = () => {
 
   return (
     <Box>
-      {/* Message d'erreur si aucun événement ni tâche */}
-      {calendarEvents.length === 0 && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          Aucun événement ou tâche à afficher dans le calendrier (mode debug).<br />
-          Vérifiez la console pour plus d'informations.
-        </Alert>
-      )}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h4">Calendrier</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpen()}
-        >
-          Nouvel événement
-        </Button>
-      </Box>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 600,
+              color: 'primary.main',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+            }}
+          >
+            <CalendarIcon fontSize="large" />
+            Calendrier
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpen()}
+            sx={{
+              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+              boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+            }}
+          >
+            Nouvel événement
+          </Button>
+        </Box>
 
-      <Paper sx={{ p: 2 }}>
-        <Calendar<CalendarEvent>
-          localizer={localizer}
-          events={calendarEvents}
-          startAccessor="startDate"
-          endAccessor="endDate"
-          style={{ height: 600 }}
-          onSelectSlot={handleSelect}
-          onSelectEvent={handleEventClick}
-          selectable
-          eventPropGetter={(event) => ({
-            style: {
-              backgroundColor: event.type === 'task' ? '#f50057' : '#4caf50',
-              borderRadius: '4px',
-              opacity: 0.8,
-              color: 'white',
-              border: '0px',
-              display: 'block',
-              padding: '2px 4px',
-              fontSize: event.type === 'task' ? '0.875rem' : '0.75rem',
-              fontWeight: event.type === 'task' ? 'normal' : 'bold',
-              textAlign: event.type === 'task' ? 'left' : 'center',
-              textTransform: event.type === 'task' ? 'none' : 'uppercase',
-              boxShadow: event.type === 'task' ? 'none' : '0 2px 4px rgba(0,0,0,0.2)',
-              margin: event.type === 'task' ? '0' : '2px 0',
-              height: event.type === 'task' ? 'auto' : '24px',
-              lineHeight: event.type === 'task' ? 'normal' : '24px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }
-          })}
-          messages={{
-            next: "Suivant",
-            previous: "Précédent",
-            today: "Aujourd'hui",
-            month: "Mois",
-            week: "Semaine",
-            day: "Jour",
-            agenda: "Agenda",
-            date: "Date",
-            time: "Heure",
-            event: "Événement",
-            noEventsInRange: "Aucun événement dans cette période",
-          }}
-        />
-      </Paper>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <Paper
+            sx={{
+              p: 3,
+              background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+              borderRadius: 2,
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <Calendar<CalendarEvent>
+              localizer={localizer}
+              events={calendarEvents}
+              startAccessor="startDate"
+              endAccessor="endDate"
+              style={{ height: 600 }}
+              onSelectSlot={handleSelect}
+              onSelectEvent={handleEventClick}
+              selectable
+              eventPropGetter={(event) => ({
+                style: {
+                  backgroundColor: event.type === 'task' ? '#f50057' : '#4caf50',
+                  borderRadius: '4px',
+                  opacity: 0.8,
+                  color: 'white',
+                  border: '0px',
+                  display: 'block',
+                  padding: '2px 4px',
+                  fontSize: event.type === 'task' ? '0.875rem' : '0.75rem',
+                  fontWeight: event.type === 'task' ? 'normal' : 'bold',
+                  textAlign: event.type === 'task' ? 'left' : 'center',
+                  textTransform: event.type === 'task' ? 'none' : 'uppercase',
+                  boxShadow: event.type === 'task' ? 'none' : '0 2px 4px rgba(0,0,0,0.2)',
+                  margin: event.type === 'task' ? '0' : '2px 0',
+                  height: event.type === 'task' ? 'auto' : '24px',
+                  lineHeight: event.type === 'task' ? 'normal' : '24px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    transform: 'scale(1.02)',
+                    opacity: 1,
+                  },
+                },
+              })}
+              messages={{
+                next: "Suivant",
+                previous: "Précédent",
+                today: "Aujourd'hui",
+                month: "Mois",
+                week: "Semaine",
+                day: "Jour",
+                agenda: "Agenda",
+                date: "Date",
+                time: "Heure",
+                event: "Événement",
+                noEventsInRange: "Aucun événement dans cette période",
+              }}
+              components={{
+                toolbar: (props) => (
+                  <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <div className="rbc-toolbar">
+                      <span className="rbc-btn-group">
+                        <button
+                          type="button"
+                          onClick={() => props.onNavigate('PREV')}
+                          className="rbc-btn"
+                        >
+                          Précédent
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => props.onNavigate('TODAY')}
+                          className="rbc-btn"
+                        >
+                          Aujourd'hui
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => props.onNavigate('NEXT')}
+                          className="rbc-btn"
+                        >
+                          Suivant
+                        </button>
+                      </span>
+                      <span className="rbc-toolbar-label">{props.label}</span>
+                      <span className="rbc-btn-group">
+                        <button
+                          type="button"
+                          className={props.view === 'month' ? 'rbc-active' : ''}
+                          onClick={() => props.onView('month')}
+                        >
+                          Mois
+                        </button>
+                        <button
+                          type="button"
+                          className={props.view === 'week' ? 'rbc-active' : ''}
+                          onClick={() => props.onView('week')}
+                        >
+                          Semaine
+                        </button>
+                        <button
+                          type="button"
+                          className={props.view === 'day' ? 'rbc-active' : ''}
+                          onClick={() => props.onView('day')}
+                        >
+                          Jour
+                        </button>
+                        <button
+                          type="button"
+                          className={props.view === 'agenda' ? 'rbc-active' : ''}
+                          onClick={() => props.onView('agenda')}
+                        >
+                          Agenda
+                        </button>
+                      </span>
+                    </div>
+                  </motion.div>
+                ),
+              }}
+            />
+          </Paper>
+        </motion.div>
+      </motion.div>
 
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>
