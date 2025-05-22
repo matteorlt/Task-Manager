@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
 import authRoutes from './routes/auth.routes';
 import taskRoutes from './routes/task.routes';
 import eventRoutes from './routes/event.routes';
@@ -14,9 +16,23 @@ dotenv.config();
 
 const app = express();
 
+// Configuration CORS
+app.use(cors({
+  origin: 'http://localhost:3001',
+  credentials: true
+}));
+
 // Middleware
-app.use(cors());
 app.use(express.json());
+
+// Créer le dossier uploads s'il n'existe pas
+const uploadsDir = path.join(__dirname, '../uploads/profile-pictures');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+// Servir les fichiers statiques
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Route de base pour tester
 app.get('/', (req, res) => {

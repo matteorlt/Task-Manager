@@ -16,6 +16,7 @@ import { loginSuccess } from './store/slices/authSlice';
 import { AnimatePresence, motion } from 'framer-motion';
 import { RootState } from './store';
 import Profile from './pages/Profile';
+import axios from 'axios';
 
 type AuthLoaderProps = { children: React.ReactNode };
 
@@ -25,7 +26,16 @@ const AuthLoader: React.FC<AuthLoaderProps> = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      dispatch(loginSuccess({ token, user: null }));
+      // Vérifier si le token est valide en faisant une requête au serveur
+      axios.get('http://localhost:3000/api/auth/verify', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(response => {
+          dispatch(loginSuccess({ token, user: response.data.user }));
+        })
+        .catch(() => {
+          localStorage.removeItem('token');
+        });
     }
   }, [dispatch]);
 

@@ -39,12 +39,13 @@ import { toggleTheme } from '../store/slices/themeSlice';
 import InviteButton from './InviteButton';
 import Notification from './Notification';
 import { invitationService } from '../services/invitationService';
+import { API_BASE_URL } from '../config';
 
 const Layout: React.FC = () => {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [notifications, setNotifications] = useState<{ id: string; message: string }[]>([]);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
-  const { token } = useSelector((state: RootState) => state.auth);
+  const { token, user } = useSelector((state: RootState) => state.auth);
   const themeMode = useSelector((state: RootState) => state.theme.mode);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -85,9 +86,9 @@ const Layout: React.FC = () => {
     dispatch(toggleTheme());
   };
 
-  const handleInvite = async (email: string) => {
+  const handleInvite = async (email: string, eventId: string) => {
     try {
-      await invitationService.sendInvitation(email);
+      await invitationService.sendInvitation(email, eventId);
       // Ajouter une notification de succès
       setNotifications(prev => [...prev, {
         id: Date.now().toString(),
@@ -95,6 +96,11 @@ const Layout: React.FC = () => {
       }]);
     } catch (error) {
       console.error('Erreur lors de l\'envoi de l\'invitation:', error);
+      // Ajouter une notification d'erreur
+      setNotifications(prev => [...prev, {
+        id: Date.now().toString(),
+        message: 'Erreur lors de l\'envoi de l\'invitation',
+      }]);
     }
   };
 
@@ -221,6 +227,17 @@ const Layout: React.FC = () => {
               <Badge badgeContent={notifications.length} color="error">
                 <NotificationsIcon />
               </Badge>
+            </IconButton>
+            <IconButton
+              color="inherit"
+              onClick={() => navigate('/profile')}
+              sx={{ p: 0 }}
+            >
+              <Avatar
+                src={user?.profilePicture ? `http://localhost:3000${user.profilePicture}` : undefined}
+                alt={user?.name || 'Profil'}
+                sx={{ width: 40, height: 40 }}
+              />
             </IconButton>
           </Box>
         </Toolbar>

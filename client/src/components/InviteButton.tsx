@@ -1,31 +1,74 @@
-import React, { useState } from 'react';
-import { Button, Dialog, DialogTitle, DialogContent, DialogActions, TextField } from '@mui/material';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import React, { useState, useEffect } from 'react';
+import {
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Box,
+  Typography,
+} from '@mui/material';
+import { invitationService } from '../services/invitationService';
+
+interface Event {
+  id: string;
+  title: string;
+}
 
 interface InviteButtonProps {
-  onInvite: (email: string) => Promise<void>;
+  onInvite: (email: string, eventId: string) => void;
 }
 
 const InviteButton: React.FC<InviteButtonProps> = ({ onInvite }) => {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState('');
+  const [events, setEvents] = useState<Event[]>([]);
+  const [error, setError] = useState('');
 
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch('/api/events');
+        const data = await response.json();
+        setEvents(data);
+      } catch (error) {
+        console.error('Erreur lors de la récupération des événements:', error);
+      }
+    };
+
+    if (open) {
+      fetchEvents();
+    }
+  }, [open]);
+
+  const handleClickOpen = () => {
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setEmail('');
+    setSelectedEvent('');
+    setError('');
+  };
 
   const handleSubmit = async () => {
-    if (!email) return;
-    
-    setLoading(true);
+    if (!email || !selectedEvent) {
+      setError('Veuillez remplir tous les champs');
+      return;
+    }
+
     try {
-      await onInvite(email);
-      setEmail('');
+      await onInvite(email, selectedEvent);
       handleClose();
     } catch (error) {
-      console.error('Erreur lors de l\'envoi de l\'invitation:', error);
-    } finally {
-      setLoading(false);
+      setError('Erreur lors de l\'envoi de l\'invitation');
     }
   };
 
@@ -33,34 +76,56 @@ const InviteButton: React.FC<InviteButtonProps> = ({ onInvite }) => {
     <>
       <Button
         variant="contained"
-        startIcon={<PersonAddIcon />}
-        onClick={handleOpen}
-        sx={{ mr: 2 }}
+        color="primary"
+        onClick={handleClickOpen}
+        sx={{
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+          },
+        }}
       >
         Inviter
       </Button>
-
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>Inviter un utilisateur</DialogTitle>
         <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="Email"
-            type="email"
-            fullWidth
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField
+              autoFocus
+              label="Email"
+              type="email"
+              fullWidth
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              error={!!error}
+            />
+            <FormControl fullWidth>
+              <InputLabel>Événement</InputLabel>
+              <Select
+                value={selectedEvent}
+                label="Événement"
+                onChange={(e) => setSelectedEvent(e.target.value)}
+                error={!!error}
+              >
+                {events.map((event) => (
+                  <MenuItem key={event.id} value={event.id}>
+                    {event.title}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            {error && (
+              <Typography color="error" variant="body2">
+                {error}
+              </Typography>
+            )}
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Annuler</Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={loading || !email}
-            variant="contained"
-          >
-            Envoyer l'invitation
+          <Button onClick={handleSubmit} variant="contained" color="primary">
+            Inviter
           </Button>
         </DialogActions>
       </Dialog>

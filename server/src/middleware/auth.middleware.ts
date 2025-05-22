@@ -13,10 +13,7 @@ interface JwtPayload {
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        id: number;
-        email: string;
-      };
+      user?: JwtPayload;
     }
   }
 }
@@ -26,16 +23,14 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
-      throw new Error();
+      return res.status(401).json({ message: 'Non authentifié' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret') as JwtPayload;
-    req.user = {
-      id: decoded.id,
-      email: decoded.email
-    };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'votre_secret_jwt') as JwtPayload;
+    req.user = decoded;
     next();
   } catch (error) {
-    res.status(401).json({ message: 'Veuillez vous authentifier' });
+    console.error('Erreur d\'authentification:', error);
+    res.status(401).json({ message: 'Non authentifié' });
   }
 }; 

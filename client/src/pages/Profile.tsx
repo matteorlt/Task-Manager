@@ -1,35 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Typography,
+  Container,
   Paper,
+  Typography,
   TextField,
   Button,
-  Grid,
+  Box,
+  Avatar,
+  IconButton,
   Snackbar,
   Alert,
-  Divider,
+  CircularProgress,
 } from '@mui/material';
-import { useSelector } from 'react-redux';
+import { PhotoCamera, Delete } from '@mui/icons-material';
+import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
-import axios from 'axios';
+import { setUser } from '../store/slices/authSlice';
 import { API_ENDPOINTS } from '../config';
+import axios from 'axios';
 
 interface ProfileData {
+  id: number;
   name: string;
   email: string;
-  created_at: string;
-  updated_at: string;
+  profilePicture: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 const Profile: React.FC = () => {
-  const { token } = useSelector((state: RootState) => state.auth);
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const dispatch = useDispatch();
+  const user = useSelector((state: RootState) => state.auth.user);
+  const token = useSelector((state: RootState) => state.auth.token);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    currentPassword: '',
-    newPassword: '',
+    password: '',
     confirmPassword: '',
   });
   const [error, setError] = useState<string | null>(null);
@@ -42,17 +51,21 @@ const Profile: React.FC = () => {
 
   const fetchProfile = async () => {
     try {
+      setLoading(true);
       const response = await axios.get(API_ENDPOINTS.PROFILE.GET, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
-      setProfile(response.data);
+      setProfileData(response.data);
       setFormData(prev => ({
         ...prev,
         name: response.data.name,
         email: response.data.email,
       }));
     } catch (error) {
+      console.error('Erreur lors de la récupération du profil:', error);
       setError('Erreur lors de la récupération du profil');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -68,36 +81,34 @@ const Profile: React.FC = () => {
     setError(null);
     setSuccess(null);
 
-    if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
+    if (formData.password && formData.password !== formData.confirmPassword) {
       setError('Les mots de passe ne correspondent pas');
       return;
     }
 
-    setLoading(true);
     try {
-      const updateData = {
+      setLoading(true);
+      const response = await axios.put(API_ENDPOINTS.PROFILE.UPDATE, {
         name: formData.name,
         email: formData.email,
-        ...(formData.currentPassword && formData.newPassword
-          ? {
-              currentPassword: formData.currentPassword,
-              newPassword: formData.newPassword,
-            }
-          : {}),
-      };
-
-      await axios.put(API_ENDPOINTS.PROFILE.UPDATE, updateData, {
-        headers: { Authorization: `Bearer ${token}` },
+        ...(formData.password && { password: formData.password }),
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
 
+      setProfileData(response.data);
+      dispatch(setUser({
+        id: response.data.id,
+        name: response.data.name,
+        email: response.data.email,
+        profilePicture: response.data.profilePicture,
+      }));
       setSuccess('Profil mis à jour avec succès');
       setFormData(prev => ({
         ...prev,
-        currentPassword: '',
-        newPassword: '',
+        password: '',
         confirmPassword: '',
       }));
-      fetchProfile();
     } catch (error: any) {
       setError(error.response?.data?.message || 'Erreur lors de la mise à jour du profil');
     } finally {
@@ -105,114 +116,157 @@ const Profile: React.FC = () => {
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+      setError('La taille du fichier ne doit pas dépasser 5MB');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('profilePicture', file);
+
+    try {
+      setLoading(true);
+      const response = await axios.post(API_ENDPOINTS.PROFILE.UPLOAD_PICTURE, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`
+        },
+      });
+      setProfileData(response.data);
+      setSuccess('Photo de profil mise à jour avec succès');
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Erreur lors de la mise à jour de la photo de profil');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemovePicture = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.delete(API_ENDPOINTS.PROFILE.REMOVE_PICTURE, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setProfileData(response.data);
+      setSuccess('Photo de profil supprimée avec succès');
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Erreur lors de la suppression de la photo de profil');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading && !profileData) {
+    return (
+      <Container maxWidth="sm" sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (!profileData) {
+    return null;
+  }
+
   return (
-    <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 4, fontWeight: 600, color: 'primary.main' }}>
-        Mon Profil
-      </Typography>
-
+    <Container maxWidth="sm" sx={{ mt: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
+          <Avatar
+            src={profileData.profilePicture ? `http://localhost:3000${profileData.profilePicture}` : undefined}
+            sx={{ width: 120, height: 120, mb: 2 }}
+          />
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <input
+              accept="image/*"
+              style={{ display: 'none' }}
+              id="profile-picture-upload"
+              type="file"
+              onChange={handleFileChange}
+            />
+            <label htmlFor="profile-picture-upload">
+              <IconButton color="primary" component="span" disabled={loading}>
+                <PhotoCamera />
+              </IconButton>
+            </label>
+            {profileData.profilePicture && (
+              <IconButton color="error" onClick={handleRemovePicture} disabled={loading}>
+                <Delete />
+              </IconButton>
+            )}
+          </Box>
+        </Box>
+
         <form onSubmit={handleSubmit}>
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Nom"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Changer le mot de passe
-                </Typography>
-              </Divider>
-            </Grid>
-
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Mot de passe actuel"
-                name="currentPassword"
-                type="password"
-                value={formData.currentPassword}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Nouveau mot de passe"
-                name="newPassword"
-                type="password"
-                value={formData.newPassword}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Confirmer le mot de passe"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                size="large"
-                disabled={loading}
-                sx={{
-                  mt: 2,
-                  background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-                  boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
-                }}
-              >
-                {loading ? 'Mise à jour...' : 'Mettre à jour le profil'}
-              </Button>
-            </Grid>
-          </Grid>
+          <TextField
+            fullWidth
+            label="Nom"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            margin="normal"
+            required
+          />
+          <TextField
+            fullWidth
+            label="Email"
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            margin="normal"
+            required
+          />
+          <TextField
+            fullWidth
+            label="Nouveau mot de passe"
+            name="password"
+            type="password"
+            value={formData.password}
+            onChange={handleChange}
+            margin="normal"
+          />
+          <TextField
+            fullWidth
+            label="Confirmer le mot de passe"
+            name="confirmPassword"
+            type="password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            margin="normal"
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            fullWidth
+            sx={{ mt: 3 }}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} /> : 'Mettre à jour le profil'}
+          </Button>
         </form>
 
-        {profile && (
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="body2" color="text.secondary">
-              Compte créé le : {new Date(profile.created_at).toLocaleDateString()}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Dernière mise à jour le : {new Date(profile.updated_at).toLocaleDateString()}
-            </Typography>
-          </Box>
-        )}
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Compte créé le: {new Date(profileData.createdAt).toLocaleDateString()}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Dernière mise à jour: {new Date(profileData.updatedAt).toLocaleDateString()}
+          </Typography>
+        </Box>
       </Paper>
 
       <Snackbar
         open={!!error}
         autoHideDuration={6000}
         onClose={() => setError(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert onClose={() => setError(null)} severity="error" sx={{ width: '100%' }}>
+        <Alert severity="error" onClose={() => setError(null)}>
           {error}
         </Alert>
       </Snackbar>
@@ -221,13 +275,12 @@ const Profile: React.FC = () => {
         open={!!success}
         autoHideDuration={6000}
         onClose={() => setSuccess(null)}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert onClose={() => setSuccess(null)} severity="success" sx={{ width: '100%' }}>
+        <Alert severity="success" onClose={() => setSuccess(null)}>
           {success}
         </Alert>
       </Snackbar>
-    </Box>
+    </Container>
   );
 };
 
