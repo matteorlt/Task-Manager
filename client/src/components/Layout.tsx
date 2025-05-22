@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
@@ -15,6 +15,7 @@ import {
   ListItemText,
   useMediaQuery,
   useTheme as useMuiTheme,
+  Badge,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -24,13 +25,18 @@ import {
   Logout as LogoutIcon,
   Brightness4 as DarkModeIcon,
   Brightness7 as LightModeIcon,
+  Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 import { RootState } from '../store';
 import { logout } from '../store/slices/authSlice';
 import { toggleTheme } from '../store/slices/themeSlice';
+import InviteButton from './InviteButton';
+import Notification from './Notification';
+import { invitationService } from '../services/invitationService';
 
 const Layout: React.FC = () => {
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [notifications, setNotifications] = useState<{ id: string; message: string }[]>([]);
   const { token } = useSelector((state: RootState) => state.auth);
   const themeMode = useSelector((state: RootState) => state.theme.mode);
   const dispatch = useDispatch();
@@ -38,6 +44,26 @@ const Layout: React.FC = () => {
   const location = useLocation();
   const muiTheme = useMuiTheme();
   const isMobile = useMediaQuery(muiTheme.breakpoints.down('sm'));
+
+  useEffect(() => {
+    const fetchInvitations = async () => {
+      try {
+        const invitations = await invitationService.getInvitations();
+        const newNotifications = invitations.map(inv => ({
+          id: inv.id,
+          message: `Nouvelle invitation de ${inv.senderEmail}`,
+        }));
+        setNotifications(newNotifications);
+      } catch (error) {
+        console.error('Erreur lors de la récupération des invitations:', error);
+      }
+    };
+
+    fetchInvitations();
+    // Polling toutes les 30 secondes pour les nouvelles invitations
+    const interval = setInterval(fetchInvitations, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -50,6 +76,23 @@ const Layout: React.FC = () => {
 
   const handleThemeToggle = () => {
     dispatch(toggleTheme());
+  };
+
+  const handleInvite = async (email: string) => {
+    try {
+      await invitationService.sendInvitation(email);
+      // Ajouter une notification de succès
+      setNotifications(prev => [...prev, {
+        id: Date.now().toString(),
+        message: `Invitation envoyée à ${email}`,
+      }]);
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de l\'invitation:', error);
+    }
+  };
+
+  const handleRemoveNotification = (id: string) => {
+    setNotifications(prev => prev.filter(notif => notif.id !== id));
   };
 
   const menuItems = [
@@ -153,6 +196,7 @@ const Layout: React.FC = () => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             Task Manager
           </Typography>
+          <InviteButton onInvite={handleInvite} />
           <IconButton
             color="inherit"
             onClick={handleThemeToggle}
@@ -206,6 +250,13 @@ const Layout: React.FC = () => {
       >
         <Outlet />
       </Box>
+      {notifications.map(notification => (
+        <Notification
+          key={notification.id}
+          message={notification.message}
+          onClose={() => handleRemoveNotification(notification.id)}
+        />
+      ))}
     </Box>
   );
 };
