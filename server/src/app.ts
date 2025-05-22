@@ -7,6 +7,7 @@ import taskRoutes from './routes/task.routes';
 import eventRoutes from './routes/event.routes';
 import invitationRoutes from './routes/invitationRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import profileRoutes from './routes/profileRoutes';
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -28,6 +29,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/invitations', invitationRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/profile', profileRoutes);
 
 // Error handling
 app.use(errorHandler);

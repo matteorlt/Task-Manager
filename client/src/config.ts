@@ -19,4 +19,8 @@ export const API_ENDPOINTS = {
     MARK_ALL_AS_READ: `${API_BASE_URL}/api/notifications/read-all`,
     DELETE: `${API_BASE_URL}/api/notifications`,
   },
+  PROFILE: {
+    GET: `${API_BASE_URL}/api/profile`,
+    UPDATE: `${API_BASE_URL}/api/profile`,
+  },
 }; 

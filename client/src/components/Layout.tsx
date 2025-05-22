@@ -16,6 +16,10 @@ import {
   useMediaQuery,
   useTheme as useMuiTheme,
   Badge,
+  Avatar,
+  Menu,
+  MenuItem,
+  Divider,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -26,6 +30,8 @@ import {
   Brightness4 as DarkModeIcon,
   Brightness7 as LightModeIcon,
   Notifications as NotificationsIcon,
+  Person as PersonIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
 import { RootState } from '../store';
 import { logout } from '../store/slices/authSlice';
@@ -37,6 +43,7 @@ import { invitationService } from '../services/invitationService';
 const Layout: React.FC = () => {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [notifications, setNotifications] = useState<{ id: string; message: string }[]>([]);
+  const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
   const { token } = useSelector((state: RootState) => state.auth);
   const themeMode = useSelector((state: RootState) => state.theme.mode);
   const dispatch = useDispatch();
@@ -95,10 +102,19 @@ const Layout: React.FC = () => {
     setNotifications(prev => prev.filter(notif => notif.id !== id));
   };
 
+  const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
+    setNotificationAnchorEl(event.currentTarget);
+  };
+
+  const handleNotificationClose = () => {
+    setNotificationAnchorEl(null);
+  };
+
   const menuItems = [
     { text: 'Tableau de bord', icon: <DashboardIcon />, path: '/' },
     { text: 'Tâches', icon: <TaskIcon />, path: '/tasks' },
     { text: 'Calendrier', icon: <CalendarIcon />, path: '/calendar' },
+    { text: 'Profil', icon: <PersonIcon />, path: '/profile' },
   ];
 
   const drawer = (
@@ -196,19 +212,67 @@ const Layout: React.FC = () => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             Task Manager
           </Typography>
-          <InviteButton onInvite={handleInvite} />
-          <IconButton
-            color="inherit"
-            onClick={handleThemeToggle}
-            sx={{ mr: 2 }}
-          >
-            {themeMode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
-          </IconButton>
-          <Button color="inherit" onClick={handleLogout}>
-            Déconnexion
-          </Button>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <InviteButton onInvite={handleInvite} />
+            <IconButton color="inherit" onClick={handleThemeToggle}>
+              {themeMode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+            </IconButton>
+            <IconButton color="inherit" onClick={handleNotificationClick}>
+              <Badge badgeContent={notifications.length} color="error">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
+          </Box>
         </Toolbar>
       </AppBar>
+
+      <Menu
+        anchorEl={notificationAnchorEl}
+        open={Boolean(notificationAnchorEl)}
+        onClose={handleNotificationClose}
+        PaperProps={{
+          sx: {
+            width: 320,
+            maxHeight: 400,
+            mt: 1.5,
+          },
+        }}
+      >
+        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Typography variant="h6">Notifications</Typography>
+          <IconButton size="small" onClick={handleNotificationClose}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+        <Divider />
+        {notifications.length === 0 ? (
+          <MenuItem disabled>
+            <Typography variant="body2" color="text.secondary">
+              Aucune notification
+            </Typography>
+          </MenuItem>
+        ) : (
+          notifications.map((notification) => (
+            <MenuItem
+              key={notification.id}
+              onClick={() => {
+                handleRemoveNotification(notification.id);
+                handleNotificationClose();
+              }}
+              sx={{
+                whiteSpace: 'normal',
+                py: 1,
+                '&:hover': {
+                  backgroundColor: themeMode === 'dark' ? 'rgba(144,202,249,0.08)' : 'rgba(33, 150, 243, 0.08)',
+                },
+              }}
+            >
+              <Typography variant="body2">{notification.message}</Typography>
+            </MenuItem>
+          ))
+        )}
+      </Menu>
+
       <Box
         component="nav"
         sx={{
@@ -250,13 +314,6 @@ const Layout: React.FC = () => {
       >
         <Outlet />
       </Box>
-      {notifications.map(notification => (
-        <Notification
-          key={notification.id}
-          message={notification.message}
-          onClose={() => handleRemoveNotification(notification.id)}
-        />
-      ))}
     </Box>
   );
 };
