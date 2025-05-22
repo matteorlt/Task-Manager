@@ -34,7 +34,12 @@ const InviteButton: React.FC<InviteButtonProps> = ({ onInvite }) => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await fetch('/api/events');
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:3000/api/events', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         const data = await response.json();
         setEvents(data);
       } catch (error) {
