@@ -27,21 +27,42 @@ export const getEvents = async (req: Request, res: Response) => {
 
 export const createEvent = async (req: Request, res: Response) => {
   try {
-    let { title, description, startDate, endDate, allDay, location } = req.body;
+    let {
+      title,
+      description,
+      startDate,
+      endDate,
+      start_date,
+      end_date,
+      allDay,
+      all_day,
+      location
+    } = req.body;
     const userId = req.user?.id;
+
+    // Log du body pour debug
+    console.log('BODY:', req.body);
 
     if (!userId) {
       return res.status(401).json({ message: 'Non authentifié' });
     }
 
+    // Prendre la valeur camelCase ou snake_case
+    startDate = startDate || start_date;
+    endDate = endDate || end_date;
+    allDay = allDay !== undefined ? allDay : all_day;
+
     // Ajuster la date de fin pour inclure le dernier jour si l'heure n'est pas précisée
-    if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+    if (endDate && /^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
       endDate = endDate + ' 23:59:59';
     }
 
+    // Fonction pour convertir undefined en null
+    const safe = (v: any) => v === undefined ? null : v;
+
     const [result] = await pool.execute<ResultSetHeader>(
       'INSERT INTO events (user_id, title, description, start_date, end_date, all_day, location) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [userId, title, description, startDate, endDate, allDay, location]
+      [userId, safe(title), safe(description), safe(startDate), safe(endDate), safe(allDay), safe(location)]
     );
 
     const [newEvent] = await pool.execute<Event[]>(
