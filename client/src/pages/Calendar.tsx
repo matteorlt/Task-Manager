@@ -244,9 +244,9 @@ const CalendarPage: React.FC = () => {
     const eventData = {
       title: formData.title.trim(),
       description: formData.description || '',
-      start_date: formatDateForServer(formData.startDate),
-      end_date: formatDateForServer(formData.endDate),
-      all_day: formData.allDay,
+      startDate: formatDateForServer(formData.startDate),
+      endDate: formatDateForServer(formData.endDate),
+      allDay: formData.allDay,
       location: formData.location || '',
     };
 

@@ -17,6 +17,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { RootState } from './store';
 import Profile from './pages/Profile';
 import axios from 'axios';
+import InvitationsList from './components/InvitationsList';
 
 type AuthLoaderProps = { children: React.ReactNode };
 
@@ -62,6 +63,7 @@ const AnimatedRoutes = () => {
             <Route path="/tasks" element={<PrivateRoute><Tasks /></PrivateRoute>} />
             <Route path="/calendar" element={<PrivateRoute><Calendar /></PrivateRoute>} />
             <Route path="profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+            <Route path="invitations" element={<PrivateRoute><InvitationsList /></PrivateRoute>} />
           </Route>
         </Routes>
       </motion.div>
@@ -90,6 +92,7 @@ const AppContent: React.FC = () => {
               <Route path="tasks" element={<Tasks />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="profile" element={<Profile />} />
+              <Route path="invitations" element={<InvitationsList />} />
             </Route>
           </Routes>
         </Router>

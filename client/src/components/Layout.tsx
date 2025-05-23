@@ -59,7 +59,7 @@ const Layout: React.FC = () => {
         const invitations = await invitationService.getInvitations();
         const newNotifications = invitations.map(inv => ({
           id: inv.id,
-          message: `Nouvelle invitation de ${inv.senderEmail}`,
+          message: `Nouvelle invitation de ${inv.senderName || inv.sender_name || inv.senderEmail}`,
         }));
         setNotifications(newNotifications);
       } catch (error) {
@@ -120,6 +120,7 @@ const Layout: React.FC = () => {
     { text: 'Tableau de bord', icon: <DashboardIcon />, path: '/' },
     { text: 'Tâches', icon: <TaskIcon />, path: '/tasks' },
     { text: 'Calendrier', icon: <CalendarIcon />, path: '/calendar' },
+    { text: 'Invitations', icon: <NotificationsIcon />, path: '/invitations' },
     { text: 'Profil', icon: <PersonIcon />, path: '/profile' },
   ];
 

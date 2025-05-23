@@ -8,6 +8,8 @@ interface Invitation {
   eventId: string;
   status: 'pending' | 'accepted' | 'declined';
   createdAt: string;
+  sender_name?: string;
+  senderName?: string;
 }
 
 const getAuthHeaders = () => {
@@ -30,7 +32,7 @@ class InvitationService {
 
   async sendInvitation(email: string, eventId: string): Promise<void> {
     try {
-      await axios.post(API_ENDPOINTS.INVITATIONS.SEND, { email, eventId }, {
+      await axios.post(API_ENDPOINTS.INVITATIONS.SEND, { recipientEmail: email, eventId }, {
         headers: getAuthHeaders(),
       });
     } catch (error) {

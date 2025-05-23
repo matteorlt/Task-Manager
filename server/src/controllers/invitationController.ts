@@ -6,6 +6,7 @@ interface Invitation extends RowDataPacket {
   id: number;
   sender_id: number;
   sender_email: string;
+  sender_name: string;
   recipient_email: string;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: Date;
@@ -15,15 +16,15 @@ interface Invitation extends RowDataPacket {
 export const sendInvitation = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { recipientEmail } = req.body;
+    const { recipientEmail, eventId } = req.body;
 
     if (!userId) {
       return res.status(401).json({ message: 'Non authentifié' });
     }
 
-    // Vérifier si l'utilisateur existe
+    // Récupérer aussi le nom de l'utilisateur
     const [users] = await pool.execute<RowDataPacket[]>(
-      'SELECT email FROM users WHERE id = ?',
+      'SELECT email, name FROM users WHERE id = ?',
       [userId]
     );
 
@@ -32,21 +33,22 @@ export const sendInvitation = async (req: Request, res: Response) => {
     }
 
     const senderEmail = users[0].email;
+    const senderName = users[0].name;
 
     // Vérifier si une invitation existe déjà
     const [existingInvitations] = await pool.execute<Invitation[]>(
-      'SELECT * FROM invitations WHERE sender_id = ? AND recipient_email = ? AND status = "pending"',
-      [userId, recipientEmail]
+      'SELECT * FROM invitations WHERE sender_id = ? AND recipient_email = ? AND event_id = ? AND status = "pending"',
+      [userId, recipientEmail, eventId]
     );
 
     if (existingInvitations.length > 0) {
-      return res.status(400).json({ message: 'Une invitation est déjà en attente pour cet utilisateur' });
+      return res.status(400).json({ message: 'Une invitation est déjà en attente pour cet utilisateur pour cet événement' });
     }
 
-    // Créer l'invitation
+    // Créer l'invitation avec le nom de l'expéditeur
     const [result] = await pool.execute<ResultSetHeader>(
-      'INSERT INTO invitations (sender_id, sender_email, recipient_email, status) VALUES (?, ?, ?, "pending")',
-      [userId, senderEmail, recipientEmail]
+      'INSERT INTO invitations (sender_id, sender_email, sender_name, recipient_email, event_id, status) VALUES (?, ?, ?, ?, ?, "pending")',
+      [userId, senderEmail, senderName, recipientEmail, eventId]
     );
 
     // Créer une notification
@@ -125,6 +127,32 @@ export const acceptInvitation = async (req: Request, res: Response) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ message: 'Invitation non trouvée ou déjà traitée' });
     }
+
+    // Récupérer l'event_id de l'invitation
+    const [invitations] = await pool.execute<RowDataPacket[]>(
+      'SELECT event_id FROM invitations WHERE id = ?',
+      [invitationId]
+    );
+    if (!invitations.length || !invitations[0].event_id) {
+      return res.status(404).json({ message: 'Aucun événement lié à cette invitation' });
+    }
+    const eventId = invitations[0].event_id;
+
+    // Récupérer l'événement original
+    const [events] = await pool.execute<RowDataPacket[]>(
+      'SELECT * FROM events WHERE id = ?',
+      [eventId]
+    );
+    if (!events.length) {
+      return res.status(404).json({ message: 'Événement original introuvable' });
+    }
+    const event = events[0];
+
+    // Créer une copie de l'événement pour l'utilisateur invité
+    await pool.execute(
+      'INSERT INTO events (user_id, title, description, start_date, end_date, all_day, location) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [userId, event.title, event.description, event.start_date, event.end_date, event.all_day, event.location]
+    );
 
     // Créer une notification
     await pool.execute(

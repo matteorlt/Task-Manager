@@ -281,9 +281,9 @@ const Tasks: React.FC = () => {
     const eventData = {
       title: eventFormData.title || null,
       description: eventFormData.description || null,
-      start_date: startDate || null,
-      end_date: endDate || null,
-      all_day: eventFormData.allDay || false,
+      startDate: startDate || null,
+      endDate: endDate || null,
+      allDay: eventFormData.allDay || false,
       location: eventFormData.location || null,
     };
 

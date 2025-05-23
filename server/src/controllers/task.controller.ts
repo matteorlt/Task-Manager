@@ -17,7 +17,11 @@ interface Task extends RowDataPacket {
 
 export const getTasks = async (req: Request, res: Response) => {
   try {
-    const [tasks] = await pool.execute<Task[]>('SELECT * FROM tasks');
+    const userId = req.user?.id;
+    const [tasks] = await pool.execute<Task[]>(
+      'SELECT * FROM tasks WHERE user_id = ?',
+      [userId]
+    );
     // Convertir les dates au format ISO
     const formattedTasks = tasks.map(task => ({
       ...task,
@@ -34,54 +38,25 @@ export const getTasks = async (req: Request, res: Response) => {
 
 export const createTask = async (req: Request, res: Response) => {
   try {
-    const { title, description, status, priority, dueDate, category, tags } = req.body;
     const userId = req.user?.id;
+    const { title, description, status, priority, dueDate, category } = req.body;
 
-    if (!userId) {
-      return res.status(401).json({ message: 'Non authentifié' });
-    }
+    const [result] = await pool.execute<ResultSetHeader>(
+      'INSERT INTO tasks (user_id, title, description, status, priority, due_date, category) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [userId, title, description, status, priority, dueDate, category]
+    );
 
-    if (!title) {
-      return res.status(400).json({ message: 'Le titre est requis' });
-    }
+    const [newTask] = await pool.execute<Task[]>(
+      'SELECT * FROM tasks WHERE id = ?',
+      [result.insertId]
+    );
 
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-
-      const [result] = await connection.execute<ResultSetHeader>(
-        'INSERT INTO tasks (user_id, title, description, status, priority, due_date, category) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [userId, title, description, status, priority, dueDate, category]
-      );
-
-      if (tags && tags.length > 0) {
-        for (const tag of tags) {
-          await connection.execute(
-            'INSERT INTO task_tags (task_id, tag) VALUES (?, ?)',
-            [result.insertId, tag]
-          );
-        }
-      }
-
-      const [newTask] = await connection.execute<Task[]>(
-        'SELECT t.*, GROUP_CONCAT(tt.tag) as tags FROM tasks t LEFT JOIN task_tags tt ON t.id = tt.task_id WHERE t.id = ? GROUP BY t.id',
-        [result.insertId]
-      );
-
-      await connection.commit();
-      res.status(201).json({
-        ...newTask[0],
-        dueDate: newTask[0].due_date ? newTask[0].due_date.toISOString() : null,
-        createdAt: newTask[0].created_at.toISOString(),
-        updatedAt: newTask[0].updated_at.toISOString(),
-        tags: newTask[0].tags ? newTask[0].tags.split(',') : []
-      });
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
+    res.status(201).json({
+      ...newTask[0],
+      dueDate: newTask[0].due_date ? newTask[0].due_date.toISOString() : null,
+      createdAt: newTask[0].created_at.toISOString(),
+      updatedAt: newTask[0].updated_at.toISOString()
+    });
   } catch (error) {
     console.error('Erreur lors de la création de la tâche:', error);
     res.status(500).json({ message: 'Erreur lors de la création de la tâche' });
@@ -90,59 +65,36 @@ export const createTask = async (req: Request, res: Response) => {
 
 export const updateTask = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const { title, description, status, priority, dueDate, category, tags } = req.body;
     const userId = req.user?.id;
+    const taskId = req.params.id;
+    const { title, description, status, priority, dueDate, category } = req.body;
 
-    if (!userId) {
-      return res.status(401).json({ message: 'Non authentifié' });
+    // Vérifier que la tâche appartient à l'utilisateur
+    const [existingTasks] = await pool.execute<Task[]>(
+      'SELECT * FROM tasks WHERE id = ? AND user_id = ?',
+      [taskId, userId]
+    );
+
+    if (existingTasks.length === 0) {
+      return res.status(403).json({ message: 'Accès non autorisé à cette tâche' });
     }
 
-    if (!title) {
-      return res.status(400).json({ message: 'Le titre est requis' });
-    }
+    await pool.execute(
+      'UPDATE tasks SET title = ?, description = ?, status = ?, priority = ?, due_date = ?, category = ? WHERE id = ? AND user_id = ?',
+      [title, description, status, priority, dueDate, category, taskId, userId]
+    );
 
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
+    const [updatedTask] = await pool.execute<Task[]>(
+      'SELECT * FROM tasks WHERE id = ?',
+      [taskId]
+    );
 
-      await connection.execute(
-        'UPDATE tasks SET title = ?, description = ?, status = ?, priority = ?, due_date = ?, category = ? WHERE id = ? AND user_id = ?',
-        [title, description, status, priority, dueDate, category, id, userId]
-      );
-
-      // Supprimer les anciens tags
-      await connection.execute('DELETE FROM task_tags WHERE task_id = ?', [id]);
-
-      // Ajouter les nouveaux tags
-      if (tags && tags.length > 0) {
-        for (const tag of tags) {
-          await connection.execute(
-            'INSERT INTO task_tags (task_id, tag) VALUES (?, ?)',
-            [id, tag]
-          );
-        }
-      }
-
-      const [updatedTask] = await connection.execute<Task[]>(
-        'SELECT t.*, GROUP_CONCAT(tt.tag) as tags FROM tasks t LEFT JOIN task_tags tt ON t.id = tt.task_id WHERE t.id = ? GROUP BY t.id',
-        [id]
-      );
-
-      await connection.commit();
-      res.json({
-        ...updatedTask[0],
-        dueDate: updatedTask[0].due_date ? updatedTask[0].due_date.toISOString() : null,
-        createdAt: updatedTask[0].created_at.toISOString(),
-        updatedAt: updatedTask[0].updated_at.toISOString(),
-        tags: updatedTask[0].tags ? updatedTask[0].tags.split(',') : []
-      });
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
+    res.json({
+      ...updatedTask[0],
+      dueDate: updatedTask[0].due_date ? updatedTask[0].due_date.toISOString() : null,
+      createdAt: updatedTask[0].created_at.toISOString(),
+      updatedAt: updatedTask[0].updated_at.toISOString()
+    });
   } catch (error) {
     console.error('Erreur lors de la mise à jour de la tâche:', error);
     res.status(500).json({ message: 'Erreur lors de la mise à jour de la tâche' });
@@ -151,17 +103,20 @@ export const updateTask = async (req: Request, res: Response) => {
 
 export const deleteTask = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
     const userId = req.user?.id;
+    const taskId = req.params.id;
 
-    if (!userId) {
-      return res.status(401).json({ message: 'Non authentifié' });
+    // Vérifier que la tâche appartient à l'utilisateur
+    const [existingTasks] = await pool.execute<Task[]>(
+      'SELECT * FROM tasks WHERE id = ? AND user_id = ?',
+      [taskId, userId]
+    );
+
+    if (existingTasks.length === 0) {
+      return res.status(403).json({ message: 'Accès non autorisé à cette tâche' });
     }
 
-    await pool.execute(
-      'DELETE FROM tasks WHERE id = ? AND user_id = ?',
-      [id, userId]
-    );
+    await pool.execute('DELETE FROM tasks WHERE id = ? AND user_id = ?', [taskId, userId]);
     res.json({ message: 'Tâche supprimée avec succès' });
   } catch (error) {
     console.error('Erreur lors de la suppression de la tâche:', error);
