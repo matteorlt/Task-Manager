@@ -21,7 +21,7 @@ export const API_ENDPOINTS = {
     GET_ALL: `${API_BASE_URL}/api/invitations`,
     SEND: `${API_BASE_URL}/api/invitations`,
     ACCEPT: (id: string) => `${API_BASE_URL}/api/invitations/${id}/accept`,
-    DECLINE: (id: string) => `${API_BASE_URL}/api/invitations/${id}/decline`,
+    DECLINE: (id: string) => `${API_BASE_URL}/api/invitations/${id}/reject`,
   },
   NOTIFICATIONS: {
     GET_ALL: `${API_BASE_URL}/api/notifications`,
