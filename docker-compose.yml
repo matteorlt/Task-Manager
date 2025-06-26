@@ -32,7 +32,7 @@ services:
     build:
       context: ./client
     ports:
-      - "8080:80"
+      - "8080:81"
 
 volumes:
   db_data:
