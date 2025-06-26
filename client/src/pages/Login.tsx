@@ -34,6 +34,7 @@ const Login: React.FC = () => {
     dispatch(loginStart());
 
     try {
+      console.log('Tentative de connexion via:', API_ENDPOINTS.AUTH.LOGIN);
       const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
         headers: {
@@ -42,10 +43,16 @@ const Login: React.FC = () => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        // Si la réponse n'est pas du JSON (ex: erreur réseau/CORS)
+        throw new Error('Erreur réseau ou CORS');
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Erreur de connexion');
+        throw new Error(data && data.message ? data.message : 'Erreur de connexion');
       }
 
       dispatch(loginSuccess(data));

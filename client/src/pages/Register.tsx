@@ -41,6 +41,7 @@ const Register: React.FC = () => {
     setLoading(true);
 
     try {
+      console.log('Tentative d\'inscription via:', API_ENDPOINTS.AUTH.REGISTER);
       const response = await fetch(API_ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
         headers: {
@@ -53,10 +54,15 @@ const Register: React.FC = () => {
         }),
       });
 
-      const data = await response.json();
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (jsonErr) {
+        throw new Error('Erreur réseau ou CORS');
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || 'Erreur lors de l\'inscription');
+        throw new Error(data && data.message ? data.message : 'Erreur lors de l\'inscription');
       }
 
       navigate('/login');
