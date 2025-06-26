@@ -21,7 +21,8 @@ app.use(cors({
   credentials: true
 }));
 
-console.log('ORIGIN:', process.env.ORIGIN)
+console.log('CORS ORIGIN autorisé:', process.env.ORIGIN);
+
 // Middleware
 app.use(express.json());
 
