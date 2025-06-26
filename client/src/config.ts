@@ -4,6 +4,7 @@ export const API_ENDPOINTS = {
   AUTH: {
     LOGIN: `${API_BASE_URL}/api/auth/login`,
     REGISTER: `${API_BASE_URL}/api/auth/register`,
+    VERIFY: `${API_BASE_URL}/api/auth/verify`,
   },
   TASKS: {
     GET_ALL: `${API_BASE_URL}/api/tasks`,
