@@ -1,0 +1,20 @@
+# Utilise une image officielle Node.js LTS
+FROM node:18
+
+# Crée un dossier dans le container et met le chemin dedans
+WORKDIR /app
+
+# Copie package.json et package-lock.json (si tu l'as)
+COPY package*.json ./
+
+# Installe les dépendances (npm install)
+RUN npm install
+
+# Copie tout le reste du projet dans le container
+COPY . .
+
+# Expose le port 3000 (c’est celui que tu utilises dans ton app)
+EXPOSE 3000
+
+# Lance ton serveur Node.js
+CMD ["node", "server.js"]
