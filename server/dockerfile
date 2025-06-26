@@ -13,8 +13,11 @@ RUN npm install
 # Copie tout le reste du projet dans le container
 COPY . .
 
-# Expose le port 3000 (c’est celui que tu utilises dans ton app)
+# Build TypeScript
+RUN npm run build
+
+# Expose le port 3000 (c'est celui que tu utilises dans ton app)
 EXPOSE 3000
 
 # Lance ton serveur Node.js
-CMD ["node", "server.js"]
+CMD ["node", "dist/app.js"]
