@@ -16,7 +16,7 @@ import { PhotoCamera, Delete } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { setUser } from '../store/slices/authSlice';
-import { API_ENDPOINTS } from '../config';
+import { API_ENDPOINTS, API_BASE_URL } from '../config';
 import axios from 'axios';
 
 interface ProfileData {
@@ -177,7 +177,7 @@ const Profile: React.FC = () => {
       <Paper elevation={3} sx={{ p: 4 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
           <Avatar
-            src={profileData.profilePicture ? `http://localhost:3000${profileData.profilePicture}` : undefined}
+            src={profileData.profilePicture ? `${API_BASE_URL}${profileData.profilePicture}` : undefined}
             sx={{ width: 120, height: 120, mb: 2 }}
           />
           <Box sx={{ display: 'flex', gap: 1 }}>

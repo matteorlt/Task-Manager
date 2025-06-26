@@ -39,9 +39,7 @@ import { fetchEventsStart, fetchEventsSuccess, fetchEventsFailure, updateEvent, 
 import { Event } from '../store/slices/eventSlice';
 import { motion } from 'framer-motion';
 import { CalendarToday as CalendarTodayIcon, Category as CategoryIcon } from '@mui/icons-material';
-
-const TASKS_URL = 'http://localhost:3000/api/tasks';
-const EVENTS_URL = 'http://localhost:3000/api/events';
+import { API_ENDPOINTS } from '../config';
 
 const Tasks: React.FC = () => {
   const dispatch = useDispatch();
@@ -77,7 +75,7 @@ const Tasks: React.FC = () => {
     const fetchTasks = async () => {
       try {
         dispatch(fetchTasksStart());
-        const response = await fetch(TASKS_URL, {
+        const response = await fetch(API_ENDPOINTS.TASKS.GET_ALL, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -91,7 +89,7 @@ const Tasks: React.FC = () => {
     const fetchEvents = async () => {
       try {
         dispatch(fetchEventsStart());
-        const response = await fetch(EVENTS_URL, {
+        const response = await fetch(API_ENDPOINTS.EVENTS.GET_ALL, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -165,7 +163,7 @@ const Tasks: React.FC = () => {
 
     try {
       if (editingTask) {
-        const response = await fetch(`${TASKS_URL}/${editingTask.id}`, {
+        const response = await fetch(`${API_ENDPOINTS.TASKS.GET_ALL}/${editingTask.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -183,7 +181,7 @@ const Tasks: React.FC = () => {
         dispatch(updateTask(data));
         setSuccess('Tâche modifiée avec succès');
       } else {
-        const response = await fetch(TASKS_URL, {
+        const response = await fetch(API_ENDPOINTS.TASKS.GET_ALL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -211,7 +209,7 @@ const Tasks: React.FC = () => {
   const handleDelete = async (taskId: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
       try {
-        await fetch(`${TASKS_URL}/${taskId}`, {
+        await fetch(`${API_ENDPOINTS.TASKS.GET_ALL}/${taskId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -298,7 +296,7 @@ const Tasks: React.FC = () => {
           ? idStr.replace('event-', '')
           : idStr;
         
-        const url = `${EVENTS_URL}/${eventId}`;
+        const url = `${API_ENDPOINTS.EVENTS.GET_ALL}/${eventId}`;
         console.log('URL de la requête:', url);
         
         const response = await fetch(url, {
@@ -334,7 +332,7 @@ const Tasks: React.FC = () => {
   const handleDeleteEvent = async (eventId: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
       try {
-        await fetch(`${EVENTS_URL}/${eventId}`, {
+        await fetch(`${API_ENDPOINTS.EVENTS.GET_ALL}/${eventId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`

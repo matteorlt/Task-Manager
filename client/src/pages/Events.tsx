@@ -34,8 +34,7 @@ import {
 import { Event } from '../store/slices/eventSlice';
 import Calendar from '@components/Calendar';
 import { formatDate, formatDateForInput, formatDateForServer } from '../utils/dateUtils';
-
-const EVENTS_URL = 'http://localhost:3000/api/events';
+import { API_ENDPOINTS } from '../config';
 
 const Events: React.FC = () => {
   const dispatch = useDispatch();
@@ -56,7 +55,7 @@ const Events: React.FC = () => {
     const fetchEvents = async () => {
       try {
         dispatch(fetchEventsStart());
-        const response = await fetch(EVENTS_URL, {
+        const response = await fetch(API_ENDPOINTS.EVENTS.GET_ALL, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -116,7 +115,7 @@ const Events: React.FC = () => {
     };
     try {
       if (editingEvent) {
-        const response = await fetch(`${EVENTS_URL}/${editingEvent.id}`, {
+        const response = await fetch(`${API_ENDPOINTS.EVENTS.GET_ALL}/${editingEvent.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -127,7 +126,7 @@ const Events: React.FC = () => {
         const data = await response.json();
         dispatch(updateEvent(data));
       } else {
-        const response = await fetch(EVENTS_URL, {
+        const response = await fetch(API_ENDPOINTS.EVENTS.GET_ALL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -147,7 +146,7 @@ const Events: React.FC = () => {
   const handleDelete = async (eventId: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
       try {
-        await fetch(`${EVENTS_URL}/${eventId}`, {
+        await fetch(`${API_ENDPOINTS.EVENTS.GET_ALL}/${eventId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`

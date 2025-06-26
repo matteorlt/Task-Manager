@@ -17,7 +17,7 @@ const app = express();
 
 // Configuration CORS
 app.use(cors({
-  origin: 'http://localhost:3001',
+  origin: process.env.ORIGIN || 'http://localhost:8081',
   credentials: true
 }));
 

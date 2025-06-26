@@ -26,6 +26,7 @@ services:
       DB_PASSWORD: password
       DB_NAME: taskmanager
       JWT_SECRET: votre_secret_jwt
+      ORIGIN: http://localhost:8081
     depends_on:
       - db
 

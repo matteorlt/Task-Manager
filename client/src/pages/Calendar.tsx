@@ -42,6 +42,7 @@ import { Event } from '../store/slices/eventSlice';
 import { Task } from '../store/slices/taskSlice';
 import { formatDate, formatDateForInput, formatDateForServer } from '../utils/dateUtils';
 import { motion } from 'framer-motion';
+import { API_ENDPOINTS } from '../config';
 
 // Type commun pour les événements du calendrier
 interface CalendarEvent {
@@ -70,8 +71,6 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-const EVENTS_URL = 'http://localhost:3000/api/events';
-
 const CalendarPage: React.FC = () => {
   const dispatch = useDispatch();
   const { events, loading: eventsLoading } = useSelector((state: RootState) => state.events);
@@ -96,7 +95,7 @@ const CalendarPage: React.FC = () => {
       try {
         // Fetch events
         dispatch(fetchEventsStart());
-        const eventsResponse = await fetch(EVENTS_URL, {
+        const eventsResponse = await fetch(API_ENDPOINTS.EVENTS.GET_ALL, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -109,7 +108,7 @@ const CalendarPage: React.FC = () => {
 
         // Fetch tasks
         dispatch(fetchTasksStart());
-        const tasksResponse = await fetch('http://localhost:3000/api/tasks', {
+        const tasksResponse = await fetch(API_ENDPOINTS.TASKS.GET_ALL, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -256,7 +255,7 @@ const CalendarPage: React.FC = () => {
         const eventId = selectedEvent.id.replace('event-', '');
         console.log('Modification de l\'événement:', { eventId, eventData });
 
-        const response = await fetch(`${EVENTS_URL}/${eventId}`, {
+        const response = await fetch(`${API_ENDPOINTS.EVENTS.GET_ALL}/${eventId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -274,7 +273,7 @@ const CalendarPage: React.FC = () => {
         dispatch(updateEvent(data));
         handleClose();
       } else {
-        const response = await fetch(EVENTS_URL, {
+        const response = await fetch(API_ENDPOINTS.EVENTS.GET_ALL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

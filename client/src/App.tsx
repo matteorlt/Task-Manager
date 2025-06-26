@@ -18,6 +18,7 @@ import { RootState } from './store';
 import Profile from './pages/Profile';
 import axios from 'axios';
 import InvitationsList from './components/InvitationsList';
+import { API_ENDPOINTS } from './config';
 
 type AuthLoaderProps = { children: React.ReactNode };
 
@@ -28,7 +29,7 @@ const AuthLoader: React.FC<AuthLoaderProps> = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token) {
       // Vérifier si le token est valide en faisant une requête au serveur
-      axios.get('http://localhost:3000/api/auth/verify', {
+      axios.get(API_ENDPOINTS.AUTH.VERIFY, {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(response => {
