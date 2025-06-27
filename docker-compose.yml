@@ -6,7 +6,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: taskmanager
+      MYSQL_DATABASE: task_manager
       MYSQL_USER: user
       MYSQL_PASSWORD: password
     ports:
@@ -24,7 +24,7 @@ services:
       DB_HOST: db
       DB_USER: user
       DB_PASSWORD: password
-      DB_NAME: taskmanager
+      DB_NAME: task_manager
       JWT_SECRET: votre_secret_jwt_super_securise
       ORIGIN: http://localhost:8081
     depends_on:
