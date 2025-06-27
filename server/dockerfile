@@ -8,13 +8,16 @@ WORKDIR /app
 COPY package*.json ./
 
 # Installe les dépendances (npm install)
-RUN npm ci --only=production
+RUN npm ci
 
 # Copie tout le reste du projet dans le container
 COPY . .
 
 # Build TypeScript
 RUN npm run build
+
+# Supprime les dépendances de dev après le build pour alléger l'image
+RUN npm prune --production
 
 # Crée le dossier uploads s'il n'existe pas
 RUN mkdir -p uploads/profile-pictures
