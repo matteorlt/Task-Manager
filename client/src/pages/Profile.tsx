@@ -15,9 +15,10 @@ import {
 import { PhotoCamera, Delete } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
-import { setUser } from '../store/slices/authSlice';
+import { setUser, logout } from '../store/slices/authSlice';
 import { API_ENDPOINTS, API_BASE_URL } from '../config';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 interface ProfileData {
   id: number;
@@ -32,6 +33,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const Profile: React.FC = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const user = useSelector((state: RootState) => state.auth.user);
   const token = useSelector((state: RootState) => state.auth.token);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
@@ -61,9 +63,13 @@ const Profile: React.FC = () => {
         name: response.data.name,
         email: response.data.email,
       }));
-    } catch (error) {
-      console.error('Erreur lors de la récupération du profil:', error);
-      setError('Erreur lors de la récupération du profil');
+    } catch (error: any) {
+      if (error.response?.status === 401 || error.response?.status === 404) {
+        dispatch(logout());
+        navigate('/login');
+      } else {
+        setError('Erreur lors de la récupération du profil');
+      }
     } finally {
       setLoading(false);
     }
@@ -168,8 +174,12 @@ const Profile: React.FC = () => {
     );
   }
 
-  if (!profileData) {
-    return null;
+  if (!profileData && error) {
+    return (
+      <Container maxWidth="sm" sx={{ mt: 4, display: 'flex', justifyContent: 'center' }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
+    );
   }
 
   return (
@@ -177,7 +187,7 @@ const Profile: React.FC = () => {
       <Paper elevation={3} sx={{ p: 4 }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 4 }}>
           <Avatar
-            src={profileData.profilePicture ? `${API_BASE_URL}${profileData.profilePicture}` : undefined}
+            src={profileData?.profilePicture ? `${API_BASE_URL}${profileData.profilePicture}` : undefined}
             sx={{ width: 120, height: 120, mb: 2 }}
           />
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -193,7 +203,7 @@ const Profile: React.FC = () => {
                 <PhotoCamera />
               </IconButton>
             </label>
-            {profileData.profilePicture && (
+            {profileData?.profilePicture && (
               <IconButton color="error" onClick={handleRemovePicture} disabled={loading}>
                 <Delete />
               </IconButton>
@@ -253,10 +263,10 @@ const Profile: React.FC = () => {
 
         <Box sx={{ mt: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            Compte créé le: {new Date(profileData.createdAt).toLocaleDateString()}
+            Compte créé le: {new Date(profileData?.createdAt).toLocaleDateString()}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Dernière mise à jour: {new Date(profileData.updatedAt).toLocaleDateString()}
+            Dernière mise à jour: {new Date(profileData?.updatedAt).toLocaleDateString()}
           </Typography>
         </Box>
       </Paper>
