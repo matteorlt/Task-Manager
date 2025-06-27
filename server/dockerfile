@@ -1,5 +1,5 @@
 # Utilise une image officielle Node.js LTS
-FROM node:18
+FROM node:18-alpine
 
 # Crée un dossier dans le container et met le chemin dedans
 WORKDIR /app
@@ -8,13 +8,16 @@ WORKDIR /app
 COPY package*.json ./
 
 # Installe les dépendances (npm install)
-RUN npm install
+RUN npm ci --only=production
 
 # Copie tout le reste du projet dans le container
 COPY . .
 
 # Build TypeScript
 RUN npm run build
+
+# Crée le dossier uploads s'il n'existe pas
+RUN mkdir -p uploads/profile-pictures
 
 # Expose le port 3000 (c'est celui que tu utilises dans ton app)
 EXPOSE 3000

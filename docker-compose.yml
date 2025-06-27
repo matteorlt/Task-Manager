@@ -25,10 +25,12 @@ services:
       DB_USER: user
       DB_PASSWORD: password
       DB_NAME: taskmanager
-      JWT_SECRET: votre_secret_jwt
-      ORIGIN: http://ip172-18-0-53-d1ejaq0l2o9000fqpt70-8081.direct.labs.play-with-docker.com
+      JWT_SECRET: votre_secret_jwt_super_securise
+      ORIGIN: http://localhost:8081
     depends_on:
       - db
+    volumes:
+      - ./server/uploads:/app/uploads
 
   client:
     build:

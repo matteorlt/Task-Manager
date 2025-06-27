@@ -32,50 +32,68 @@ Une application web complète de gestion de tâches, d'événements et de collab
 
 ---
 
-## Modifications et améliorations récentes
+## 🐳 Démarrage Rapide avec Docker (Recommandé)
 
-- **Correction CORS** : le backend autorise désormais le frontend sur le port 3001 (`origin: 'http://localhost:3001'`).
-- **Gestion robuste de l'URL des images** : affichage garanti même sans fichier `.env` côté front.
-- **Sélection dynamique des événements dans les invitations** :  
-  - Récupération des événements via l'API avec le token d'authentification.
-  - Correction du fetch pour utiliser l'URL complète et le header Authorization.
-- **Correction du bug d'affichage de la photo de profil** :  
-  - L'URL de l'image est désormais toujours correcte, même en environnement multi-port.
-- **Gestion des erreurs améliorée** (affichage des messages d'erreur dans les formulaires).
-- **Vérification de la présence d'événements avant affichage dans le select**.
-- **Ajout de logs pour le debug et la traçabilité**.
+### Prérequis
+- Docker et Docker Compose installés
+
+### Installation et démarrage
+
+1. **Cloner le repository**
+   ```bash
+   git clone https://github.com/matteorlt/Task-Manager
+   cd Task-Manager
+   ```
+
+2. **Démarrer avec Docker**
+   
+   **Sur Windows (PowerShell) :**
+   ```powershell
+   .\start.ps1
+   ```
+   
+   **Sur Linux/Mac :**
+   ```bash
+   chmod +x start.sh
+   ./start.sh
+   ```
+   
+   **Ou manuellement :**
+   ```bash
+   docker-compose up --build -d
+   ```
+
+3. **Accéder à l'application**
+   - 🌐 Frontend : [http://localhost:8081](http://localhost:8081)
+   - 🔧 Backend API : [http://localhost:3000](http://localhost:3000)
+   - 🗄️ Base de données : localhost:3306
+
+### Commandes Docker utiles
+
+```bash
+# Voir les logs en temps réel
+docker-compose logs -f
+
+# Arrêter l'application
+docker-compose down
+
+# Redémarrer un service spécifique
+docker-compose restart server
+
+# Voir le statut des conteneurs
+docker-compose ps
+```
 
 ---
 
-## Technologies Utilisées
+## 🛠️ Installation Manuelle (Développement)
 
-### IA Utilisée
-- Cursor
-- GPT-4o
-
-### Frontend
-- React + TypeScript
-- Redux Toolkit
-- Material-UI
-- React Router
-- React Big Calendar
-
-### Backend
-- Node.js + Express + TypeScript
-- MySQL
-- JWT, Bcrypt
-
----
-
-## Prérequis
-
+### Prérequis
 - Node.js (v14+)
 - MySQL (v8+)
 - npm ou yarn
 
----
-
-## Installation
+### Installation
 
 1. **Cloner le repository**
    ```bash
@@ -104,14 +122,8 @@ Une application web complète de gestion de tâches, d'événements et de collab
    cd ../client
    npm install
    ```
-   - (Optionnel) Pour le développement, tu peux ajouter dans `client/package.json` :
-     ```json
-     "proxy": "http://localhost:3000"
-     ```
 
----
-
-## Démarrage
+### Démarrage
 
 1. **Démarrer le Backend**
    ```bash
@@ -130,6 +142,31 @@ Une application web complète de gestion de tâches, d'événements et de collab
 
 ---
 
+## Technologies Utilisées
+
+### IA Utilisée
+- Cursor
+- GPT-4o
+
+### Frontend
+- React + TypeScript
+- Redux Toolkit
+- Material-UI
+- React Router
+- React Big Calendar
+
+### Backend
+- Node.js + Express + TypeScript
+- MySQL
+- JWT, Bcrypt
+
+### Infrastructure
+- Docker & Docker Compose
+- Nginx (reverse proxy)
+- MySQL 8.0
+
+---
+
 ## Structure du Projet
 
 ```
@@ -139,16 +176,25 @@ Une application web complète de gestion de tâches, d'événements et de collab
 │   │   ├── pages/         # Pages de l'application
 │   │   ├── store/         # Redux
 │   │   └── ...
+│   ├── dockerfile         # Configuration Docker
+│   ├── nginx.conf         # Configuration Nginx
 │   └── ...
 │
-└── server/                # Backend Node.js
-    ├── src/
-    │   ├── controllers/   # Contrôleurs
-    │   ├── routes/        # Routes API
-    │   ├── middleware/    # Middleware
-    │   ├── config/        # Configuration
-    │   └── database/      # Scripts SQL
-    └── ...
+├── server/                # Backend Node.js
+│   ├── src/
+│   │   ├── controllers/   # Contrôleurs
+│   │   ├── routes/        # Routes API
+│   │   ├── middleware/    # Middleware
+│   │   ├── config/        # Configuration
+│   │   └── database/      # Scripts SQL
+│   ├── dockerfile         # Configuration Docker
+│   └── ...
+│
+├── db_init/               # Scripts d'initialisation DB
+├── docker-compose.yml     # Configuration Docker Compose
+├── start.sh              # Script de démarrage (Linux/Mac)
+├── start.ps1             # Script de démarrage (Windows)
+└── ...
 ```
 
 ---
