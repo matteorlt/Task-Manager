@@ -263,10 +263,10 @@ const Profile: React.FC = () => {
 
         <Box sx={{ mt: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            Compte créé le: {new Date(profileData?.createdAt).toLocaleDateString()}
+            Compte créé le: {profileData?.createdAt ? new Date(profileData.createdAt).toLocaleDateString() : ''}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Dernière mise à jour: {new Date(profileData?.updatedAt).toLocaleDateString()}
+            Dernière mise à jour: {profileData?.updatedAt ? new Date(profileData.updatedAt).toLocaleDateString() : ''}
           </Typography>
         </Box>
       </Paper>
