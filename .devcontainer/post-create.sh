@@ -1,40 +1,11 @@
 #!/bin/bash
 
-# Script de post-création pour GitHub Codespaces
+# Script de post-création pour GitHub Codespaces (Version simplifiée)
 # Ce script s'exécute automatiquement après la création du conteneur
 
 echo "🚀 Configuration de l'environnement Task Manager..."
 
-# Attendre que la base de données soit prête
-echo "⏳ Attente de la base de données..."
-sleep 10
-
-# Vérifier que la base de données est accessible
-while ! mysqladmin ping -h db -u user -ppassword --silent; do
-    echo "⏳ En attente de la base de données..."
-    sleep 2
-done
-
-echo "✅ Base de données prête !"
-
-# Installer les dépendances du backend
-echo "📦 Installation des dépendances backend..."
-cd /workspaces/Task-Manager/server
-npm install
-
-# Installer les dépendances du frontend
-echo "📦 Installation des dépendances frontend..."
-cd /workspaces/Task-Manager/client
-npm install
-
-# Construire le frontend
-echo "🔨 Construction du frontend..."
-npm run build
-
-# Retourner au répertoire racine
-cd /workspaces/Task-Manager
-
-# Créer un fichier d'information sur l'environnement
+# Créer le fichier d'information immédiatement
 cat > codespaces-info.md << EOF
 # 🌐 URLs de votre application Task Manager
 
@@ -69,12 +40,43 @@ docker-compose restart server
 
 # Arrêter tous les services
 docker-compose down
+
+# Installer les dépendances manuellement si nécessaire
+cd /workspaces/Task-Manager/server && npm install
+cd /workspaces/Task-Manager/client && npm install
+\`\`\`
+
+## ⚠️ Note importante
+Si l'application ne démarre pas automatiquement, exécutez manuellement :
+\`\`\`bash
+cd /workspaces/Task-Manager
+docker-compose up -d
 \`\`\`
 EOF
 
+echo "✅ Fichier d'information créé !"
+
+# Installation des dépendances en arrière-plan (non bloquant)
+echo "📦 Installation des dépendances en arrière-plan..."
+
+# Backend
+cd /workspaces/Task-Manager/server
+npm install &
+BACKEND_PID=$!
+
+# Frontend  
+cd /workspaces/Task-Manager/client
+npm install &
+FRONTEND_PID=$!
+
+echo "⏳ Installation en cours... (ne bloquera pas le démarrage)"
+
+# Retourner au répertoire racine
+cd /workspaces/Task-Manager
+
 echo "✅ Configuration terminée !"
 echo ""
-echo "🌐 Votre application Task Manager est maintenant accessible via :"
+echo "🌐 Votre application Task Manager sera accessible via :"
 echo "   Frontend: https://\${CODESPACE_NAME}-8081.\${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
 echo "   Backend:  https://\${CODESPACE_NAME}-3000.\${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
 echo ""
