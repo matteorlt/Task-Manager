@@ -1,0 +1,74 @@
+{
+  "name": "Task Manager - Full Stack",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "devcontainer",
+  "workspaceFolder": "/workspaces/Task-Manager",
+  "shutdownAction": "stopCompose",
+  
+  // Configuration des ports pour Codespaces
+  "forwardPorts": [3000, 8081, 3306],
+  "portsAttributes": {
+    "3000": {
+      "label": "Backend API",
+      "onAutoForward": "notify"
+    },
+    "8081": {
+      "label": "Frontend React App",
+      "onAutoForward": "openBrowser"
+    },
+    "3306": {
+      "label": "MySQL Database",
+      "onAutoForward": "silent"
+    }
+  },
+
+  // Configuration des extensions VS Code recommandées
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.vscode-typescript-next",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-json",
+        "ms-vscode-remote.remote-containers",
+        "ms-vscode.vscode-eslint",
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense",
+        "ms-vscode.vscode-docker",
+        "ms-mssql.mssql"
+      ],
+      "settings": {
+        "typescript.preferences.importModuleSpecifier": "relative",
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": true
+        },
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+
+  // Scripts de post-création
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  // Variables d'environnement
+  "containerEnv": {
+    "NODE_ENV": "development",
+    "REACT_APP_API_URL": "https://${localEnv:CODESPACE_NAME}-3000.${localEnv:GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
+    "DB_HOST": "db",
+    "DB_USER": "user",
+    "DB_PASSWORD": "password",
+    "DB_NAME": "task_manager",
+    "JWT_SECRET": "codespaces_jwt_secret_2024"
+  },
+
+  // Configuration des fonctionnalités
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  // Configuration de l'utilisateur
+  "remoteUser": "node"
+}

@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # Service principal pour le développement
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/typescript-node:18
+    volumes:
+      - ../:/workspaces:cached
+    command: sleep infinity
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  # Base de données MySQL
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: task_manager
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ../db_init:/docker-entrypoint-initdb.d/:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Backend Node.js
+  server:
+    build:
+      context: ../server
+      dockerfile: dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST: db
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: task_manager
+      JWT_SECRET: codespaces_jwt_secret_2024
+      ORIGIN: https://${CODESPACE_NAME}-8081.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}
+      NODE_ENV: development
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ../server:/app
+      - /app/node_modules
+      - ../server/uploads:/app/uploads
+    networks:
+      - app-network
+    command: npm run dev
+
+  # Frontend React
+  client:
+    build:
+      context: ../client
+      dockerfile: dockerfile
+      args:
+        REACT_APP_API_URL: https://${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}/api
+    ports:
+      - "8081:80"
+    depends_on:
+      - server
+    volumes:
+      - ../client:/app
+      - /app/node_modules
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+
+networks:
+  app-network:
+    driver: bridge
