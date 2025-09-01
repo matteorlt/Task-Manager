@@ -48,7 +48,7 @@ services:
       DB_PASSWORD: password
       DB_NAME: task_manager
       JWT_SECRET: codespaces_jwt_secret_2024
-      ORIGIN: https://${CODESPACE_NAME}-8081.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}
+      ORIGIN: https://${CODESPACE_NAME}-8081.app.github.dev
       NODE_ENV: development
     depends_on:
       db:
@@ -67,7 +67,7 @@ services:
       context: ../client
       dockerfile: dockerfile
       args:
-        REACT_APP_API_URL: https://${CODESPACE_NAME}-3000.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}/api
+        REACT_APP_API_URL: https://${CODESPACE_NAME}-3000.app.github.dev/api
     ports:
       - "8081:80"
     depends_on:

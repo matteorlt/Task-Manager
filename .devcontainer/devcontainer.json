@@ -55,7 +55,7 @@
   // Variables d'environnement
   "containerEnv": {
     "NODE_ENV": "development",
-    "REACT_APP_API_URL": "https://${localEnv:CODESPACE_NAME}-3000.${localEnv:GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}",
+    "REACT_APP_API_URL": "https://${localEnv:CODESPACE_NAME}-3000.app.github.dev",
     "DB_HOST": "db",
     "DB_USER": "user",
     "DB_PASSWORD": "password",

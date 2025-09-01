@@ -16,8 +16,33 @@ dotenv.config();
 const app = express();
 
 // Configuration CORS
+const allowedOrigins = [
+  process.env.ORIGIN || 'http://localhost:8081',
+  'http://localhost:8081',
+  'https://*.app.github.dev',
+  'https://*.githubpreview.dev'
+];
+
 app.use(cors({
-  origin: process.env.ORIGIN || 'http://localhost:8081',
+  origin: function (origin, callback) {
+    // Autoriser les requêtes sans origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Vérifier si l'origin est dans la liste autorisée
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (allowedOrigin.includes('*')) {
+        return origin.includes(allowedOrigin.replace('*', ''));
+      }
+      return origin === allowedOrigin;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.log('Origin non autorisé:', origin);
+      callback(new Error('Non autorisé par CORS'));
+    }
+  },
   credentials: true
 }));
 
