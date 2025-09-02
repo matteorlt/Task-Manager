@@ -52,11 +52,20 @@ app.use(cors({
       callback(new Error('Non autorisé par CORS'));
     }
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Length'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 
 // Gérer explicitement les preflight requests
-app.options('*', cors());
+app.options('*', cors({
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  credentials: true
+}));
 
 console.log('CORS ORIGIN autorisé:', process.env.ORIGIN);
 
