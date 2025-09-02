@@ -16,26 +16,35 @@ dotenv.config();
 const app = express();
 
 // Configuration CORS
-const allowedOrigins = [
-  process.env.ORIGIN || 'http://localhost:8081',
-  'http://localhost:8081',
-  'https://*.app.github.dev',
-  'https://*.githubpreview.dev'
-];
+const explicitOrigin = process.env.ORIGIN || 'http://localhost:8081';
 
 app.use(cors({
   origin: function (origin, callback) {
     // Autoriser les requêtes sans origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    
-    // Vérifier si l'origin est dans la liste autorisée
-    const isAllowed = allowedOrigins.some(allowedOrigin => {
-      if (allowedOrigin.includes('*')) {
-        return origin.includes(allowedOrigin.replace('*', ''));
+
+    let isAllowed = false;
+    try {
+      const url = new URL(origin);
+      const hostname = url.hostname;
+
+      // Autoriser l'origin explicite
+      if (origin === explicitOrigin) {
+        isAllowed = true;
       }
-      return origin === allowedOrigin;
-    });
-    
+
+      // Autoriser tous les sous-domaines Codespaces
+      if (
+        hostname.endsWith('.app.github.dev') ||
+        hostname.endsWith('.githubpreview.dev')
+      ) {
+        isAllowed = true;
+      }
+    } catch (e) {
+      // Si l'origin n'est pas une URL valide, on refuse
+      isAllowed = false;
+    }
+
     if (isAllowed) {
       callback(null, true);
     } else {
@@ -45,6 +54,9 @@ app.use(cors({
   },
   credentials: true
 }));
+
+// Gérer explicitement les preflight requests
+app.options('*', cors());
 
 console.log('CORS ORIGIN autorisé:', process.env.ORIGIN);
 
