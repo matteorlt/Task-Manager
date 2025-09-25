@@ -296,4 +296,23 @@ Notes:
 
 ## Intégration continue (GitHub Actions)
 
-Un workflow CI (`.github/workflows/ci.yml`) installe, build et exécute les tests du serveur et du client. Une base MySQL de service est provisionnée mais les tests serveurs utilisent des mocks, donc aucune migration n'est requise.
+Un workflow CI (`.github/workflows/ci.yml`) installe, build et exécute les tests du serveur et du client.
+
+### Ce que fait la CI
+- Installe les dépendances du serveur et du client
+- Build le serveur (`npm run build`)
+- Exécute les tests serveur (`npm test`) avec Jest/ts-jest/Supertest
+- Build le client (CRA) avec `CI=false` pour ne pas bloquer sur de simples warnings
+- Exécute les tests client (Testing Library)
+
+### Quand la CI s’exécute
+- À chaque push sur `master` (et PR depuis n’importe quelle branche)
+- Manuellement depuis l’onglet Actions (Run workflow)
+
+### Variables et services
+- Node 18 via `actions/setup-node`
+- Service MySQL 8 (pré-provisionné pour usages futurs). Les tests serveur mockent la base; aucune migration n’est requise pour passer au vert.
+
+Pour les détails, voir le fichier `.github/workflows/ci.yml` dans le repo.
+
+Consulte également le guide de contribution et les règles du projet dans `CONTRIBUTING.md` (à lire AVANT toute contribution).
