@@ -276,3 +276,24 @@ MIT
 - [https://github.com/matteorlt/Task-Manager](https://github.com/matteorlt/Task-Manager)
 
 ---
+
+## Tests
+
+### Côté serveur (Jest + ts-jest + Supertest)
+
+- Installation: `cd server && npm ci`
+- Lancer tous les tests: `npm test`
+- Couverture: `npm run test:coverage`
+
+Notes:
+- Les tests d'intégration mockent la base (`src/config/database`) et, selon les suites, l'auth middleware.
+- Le serveur ne se met pas à écouter en `NODE_ENV=test`.
+
+### Côté client (CRA + Testing Library)
+
+- Installation: `cd client && npm ci`
+- Lancer tous les tests: `npm test`
+
+## Intégration continue (GitHub Actions)
+
+Un workflow CI (`.github/workflows/ci.yml`) installe, build et exécute les tests du serveur et du client. Une base MySQL de service est provisionnée mais les tests serveurs utilisent des mocks, donc aucune migration n'est requise.
