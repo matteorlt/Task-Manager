@@ -32,45 +32,6 @@ Une application web complète de gestion de tâches, d'événements et de collab
 
 ---
 
-## 🚀 Démarrage avec GitHub Codespaces (Recommandé pour le portfolio)
-
-### Prérequis
-- Un compte GitHub
-- Accès à GitHub Codespaces
-
-### Démarrage en un clic
-
-1. **Créer un Codespace**
-   - Allez sur votre repository GitHub
-   - Cliquez sur le bouton "Code" → "Codespaces" → "Create codespace on main"
-   - Attendez l'initialisation automatique (2-3 minutes)
-
-2. **Accéder à votre application**
-   - L'URL du frontend s'ouvrira automatiquement
-   - Ou consultez le fichier `codespaces-info.md` généré
-
-3. **URLs publiques générées automatiquement**
-   - 🌐 **Frontend** : `https://[CODESPACE_NAME]-8081.[GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN]`
-   - 🔧 **Backend API** : `https://[CODESPACE_NAME]-3000.[GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN]`
-   - 🗄️ **Base de données** : `[CODESPACE_NAME]-3306.[GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN]:3306`
-
-### 🎯 Pour votre portfolio
-L'URL du frontend est automatiquement publique et peut être utilisée directement dans votre portfolio !
-
-### Commandes utiles dans Codespaces
-```bash
-# Voir les logs des services
-docker-compose logs -f
-
-# Redémarrer un service
-docker-compose restart server
-
-# Voir le statut des conteneurs
-docker-compose ps
-```
-
----
-
 ## 🐳 Démarrage Rapide avec Docker (Local)
 
 ### Prérequis
