@@ -37,7 +37,7 @@ jobs:
 
       - name: Install server dependencies
         working-directory: server
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Build server
         working-directory: server
@@ -56,7 +56,7 @@ jobs:
 
       - name: Install client dependencies
         working-directory: client
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Build client
         working-directory: client
