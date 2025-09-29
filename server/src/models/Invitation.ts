@@ -6,7 +6,8 @@ export interface Invitation extends RowDataPacket {
   sender_email: string;
   sender_name: string;
   recipient_email: string;
-  event_id: number;
+  event_id: number | null;
+  task_id: number | null;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: Date;
   updated_at: Date;

@@ -143,6 +143,8 @@ const Profile: React.FC = () => {
         },
       });
       setProfileData(response.data);
+      // Mettre à jour l'utilisateur dans le store Redux
+      dispatch(setUser(response.data));
       setSuccess('Photo de profil mise à jour avec succès');
     } catch (error: any) {
       setError(error.response?.data?.message || 'Erreur lors de la mise à jour de la photo de profil');
@@ -158,6 +160,8 @@ const Profile: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfileData(response.data);
+      // Mettre à jour l'utilisateur dans le store Redux
+      dispatch(setUser(response.data));
       setSuccess('Photo de profil supprimée avec succès');
     } catch (error: any) {
       setError(error.response?.data?.message || 'Erreur lors de la suppression de la photo de profil');

@@ -1,6 +1,6 @@
 import express from 'express';
 import { auth } from '../middleware/auth.middleware';
-import { getEvents, createEvent, updateEvent, deleteEvent } from '../controllers/event.controller';
+import { getEvents, createEvent, updateEvent, deleteEvent, getEventParticipants } from '../controllers/event.controller';
 
 const router = express.Router();
 
@@ -12,5 +12,6 @@ router.get('/', getEvents);
 router.post('/', createEvent);
 router.put('/:id', updateEvent);
 router.delete('/:id', deleteEvent);
+router.get('/:id/participants', getEventParticipants);
 
 export default router; 

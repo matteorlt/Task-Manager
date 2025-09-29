@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.routes';
 import taskRoutes from './routes/task.routes';
 import eventRoutes from './routes/event.routes';
 import invitationRoutes from './routes/invitationRoutes';
+import taskInvitationRoutes from './routes/taskInvitationRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import profileRoutes from './routes/profileRoutes';
 import { errorHandler } from './middleware/errorHandler';
@@ -91,6 +92,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/invitations', invitationRoutes);
+app.use('/api/task-invitations', taskInvitationRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/profile', profileRoutes);
 

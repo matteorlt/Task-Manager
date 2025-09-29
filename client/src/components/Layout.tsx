@@ -235,7 +235,7 @@ const Layout: React.FC = () => {
               sx={{ p: 0 }}
             >
               <Avatar
-                src={user?.profilePicture ? `http://localhost:3000${user.profilePicture}` : undefined}
+                src={user?.profilePicture ? `${API_BASE_URL}${user.profilePicture}` : undefined}
                 alt={user?.name || 'Profil'}
                 sx={{ width: 40, height: 40 }}
               />

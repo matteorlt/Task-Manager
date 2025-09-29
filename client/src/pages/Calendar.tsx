@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -43,6 +43,7 @@ import { Task } from '../store/slices/taskSlice';
 import { formatDate, formatDateForInput, formatDateForServer } from '../utils/dateUtils';
 import { motion } from 'framer-motion';
 import { API_ENDPOINTS } from '../config';
+import ParticipantList from '../components/ParticipantList';
 
 // Type commun pour les événements du calendrier
 interface CalendarEvent {
@@ -89,6 +90,11 @@ const CalendarPage: React.FC = () => {
     location: '',
   });
   const navigate = useNavigate();
+  const hasMountedRef = useRef(false);
+
+  useEffect(() => {
+    hasMountedRef.current = true;
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -314,10 +320,50 @@ const CalendarPage: React.FC = () => {
     }
   };
 
+  // Mémo pour éviter de recréer ces objets à chaque saisie (sinon remount et ré-anime)
+  const calendarMessages = useMemo(() => ({
+    next: "Suivant",
+    previous: "Précédent",
+    today: "Aujourd'hui",
+    month: "Mois",
+    week: "Semaine",
+    day: "Jour",
+    agenda: "Agenda",
+    date: "Date",
+    time: "Heure",
+    event: "Événement",
+    noEventsInRange: "Aucun événement dans cette période",
+  }), []);
+
+  const ToolbarComponent = (props: any) => (
+    <motion.div
+      initial={!hasMountedRef.current ? { opacity: 0, y: -20 } : false}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="rbc-toolbar">
+        <span className="rbc-btn-group">
+          <button type="button" onClick={() => props.onNavigate('PREV')} className="rbc-btn">Précédent</button>
+          <button type="button" onClick={() => props.onNavigate('TODAY')} className="rbc-btn">Aujourd'hui</button>
+          <button type="button" onClick={() => props.onNavigate('NEXT')} className="rbc-btn">Suivant</button>
+        </span>
+        <span className="rbc-toolbar-label">{props.label}</span>
+        <span className="rbc-btn-group">
+          <button type="button" className={props.view === 'month' ? 'rbc-active' : ''} onClick={() => props.onView('month')}>Mois</button>
+          <button type="button" className={props.view === 'week' ? 'rbc-active' : ''} onClick={() => props.onView('week')}>Semaine</button>
+          <button type="button" className={props.view === 'day' ? 'rbc-active' : ''} onClick={() => props.onView('day')}>Jour</button>
+          <button type="button" className={props.view === 'agenda' ? 'rbc-active' : ''} onClick={() => props.onView('agenda')}>Agenda</button>
+        </span>
+      </div>
+    </motion.div>
+  );
+
+  const calendarComponents = useMemo(() => ({ toolbar: ToolbarComponent }), []);
+
   return (
     <Box>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={!hasMountedRef.current ? { opacity: 0, y: 20 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
@@ -349,7 +395,7 @@ const CalendarPage: React.FC = () => {
         </Box>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={!hasMountedRef.current ? { opacity: 0, scale: 0.95 } : false}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
@@ -449,85 +495,8 @@ const CalendarPage: React.FC = () => {
                   },
                 },
               })}
-              messages={{
-                next: "Suivant",
-                previous: "Précédent",
-                today: "Aujourd'hui",
-                month: "Mois",
-                week: "Semaine",
-                day: "Jour",
-                agenda: "Agenda",
-                date: "Date",
-                time: "Heure",
-                event: "Événement",
-                noEventsInRange: "Aucun événement dans cette période",
-              }}
-              components={{
-                toolbar: (props) => (
-                  <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="rbc-toolbar">
-                      <span className="rbc-btn-group">
-                        <button
-                          type="button"
-                          onClick={() => props.onNavigate('PREV')}
-                          className="rbc-btn"
-                        >
-                          Précédent
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => props.onNavigate('TODAY')}
-                          className="rbc-btn"
-                        >
-                          Aujourd'hui
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => props.onNavigate('NEXT')}
-                          className="rbc-btn"
-                        >
-                          Suivant
-                        </button>
-                      </span>
-                      <span className="rbc-toolbar-label">{props.label}</span>
-                      <span className="rbc-btn-group">
-                        <button
-                          type="button"
-                          className={props.view === 'month' ? 'rbc-active' : ''}
-                          onClick={() => props.onView('month')}
-                        >
-                          Mois
-                        </button>
-                        <button
-                          type="button"
-                          className={props.view === 'week' ? 'rbc-active' : ''}
-                          onClick={() => props.onView('week')}
-                        >
-                          Semaine
-                        </button>
-                        <button
-                          type="button"
-                          className={props.view === 'day' ? 'rbc-active' : ''}
-                          onClick={() => props.onView('day')}
-                        >
-                          Jour
-                        </button>
-                        <button
-                          type="button"
-                          className={props.view === 'agenda' ? 'rbc-active' : ''}
-                          onClick={() => props.onView('agenda')}
-                        >
-                          Agenda
-                        </button>
-                      </span>
-                    </div>
-                  </motion.div>
-                ),
-              }}
+              messages={calendarMessages}
+              components={calendarComponents}
             />
           </Paper>
         </motion.div>
@@ -618,6 +587,17 @@ const CalendarPage: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               margin="normal"
             />
+            
+            {/* Affichage des participants pour les événements existants */}
+            {selectedEvent && selectedEvent.type === 'event' && (
+              <Box mt={2}>
+                <ParticipantList
+                  eventId={selectedEvent.id.replace('event-', '')}
+                  themeMode={themeMode}
+                  compact={false}
+                />
+              </Box>
+            )}
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose} sx={{ color: themeMode === 'dark' ? '#fff' : undefined }}>

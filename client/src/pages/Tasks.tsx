@@ -23,6 +23,7 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  PersonAdd as PersonAddIcon,
 } from '@mui/icons-material';
 import { RootState } from '../store';
 import {
@@ -40,6 +41,8 @@ import { Event } from '../store/slices/eventSlice';
 import { motion } from 'framer-motion';
 import { CalendarToday as CalendarTodayIcon, Category as CategoryIcon } from '@mui/icons-material';
 import { API_ENDPOINTS } from '../config';
+import ParticipantList from '../components/ParticipantList';
+import InviteToTaskDialog from '../components/InviteToTaskDialog';
 
 const Tasks: React.FC = () => {
   const dispatch = useDispatch();
@@ -70,6 +73,8 @@ const Tasks: React.FC = () => {
     allDay: false,
     location: '',
   });
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [selectedTaskForInvite, setSelectedTaskForInvite] = useState<Task | null>(null);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -252,6 +257,21 @@ const Tasks: React.FC = () => {
     setEditingEvent(null);
   };
 
+  const handleOpenInviteDialog = (task: Task) => {
+    setSelectedTaskForInvite(task);
+    setInviteDialogOpen(true);
+  };
+
+  const handleCloseInviteDialog = () => {
+    setInviteDialogOpen(false);
+    setSelectedTaskForInvite(null);
+  };
+
+  const handleInviteSuccess = () => {
+    // Rafraîchir les données si nécessaire
+    // Ici on pourrait recharger les tâches ou les participants
+  };
+
   const handleSubmitEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -398,6 +418,23 @@ const Tasks: React.FC = () => {
     }
   };
 
+  // Fonction pour trouver les événements liés à une tâche (même date d'échéance)
+  const getRelatedEvents = (task: Task) => {
+    const taskDate = new Date(task.dueDate);
+    taskDate.setHours(0, 0, 0, 0);
+    
+    return events.filter(event => {
+      const eventStartDate = new Date(event.startDate || (event as any)['start_date']);
+      eventStartDate.setHours(0, 0, 0, 0);
+      
+      const eventEndDate = new Date(event.endDate || (event as any)['end_date']);
+      eventEndDate.setHours(0, 0, 0, 0);
+      
+      // Vérifier si la date de la tâche est dans la plage de l'événement
+      return taskDate >= eventStartDate && taskDate <= eventEndDate;
+    });
+  };
+
   return (
     <Box>
       <Snackbar
@@ -442,6 +479,7 @@ const Tasks: React.FC = () => {
       <Grid container spacing={3}>
         {tasks.map((task, index) => {
           const tags = Array.isArray(task.tags) ? task.tags : [];
+          const relatedEvents = getRelatedEvents(task);
           return (
             <Grid item xs={12} sm={6} md={4} key={task.id}>
               <motion.div
@@ -573,6 +611,49 @@ const Tasks: React.FC = () => {
                         ))}
                       </Box>
                     )}
+                    
+                    {/* Affichage des participants de la tâche */}
+                    <Box mt={2}>
+                      <ParticipantList
+                        taskId={task.id}
+                        themeMode={themeMode}
+                        compact={true}
+                      />
+                    </Box>
+
+                    {/* Affichage des participants des événements liés */}
+                    {relatedEvents.length > 0 && (
+                      <Box mt={2}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary',
+                            mb: 1,
+                            fontWeight: 500,
+                          }}
+                        >
+                          Événements liés:
+                        </Typography>
+                        {relatedEvents.map((event, eventIndex) => (
+                          <Box key={eventIndex} mb={1}>
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.6)' : 'text.secondary',
+                                fontWeight: 500,
+                              }}
+                            >
+                              📅 {event.title}
+                            </Typography>
+                            <ParticipantList
+                              eventId={event.id}
+                              themeMode={themeMode}
+                              compact={true}
+                            />
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
                   </CardContent>
                   <CardActions sx={{ p: 2, pt: 0 }}>
                     <Button
@@ -584,6 +665,16 @@ const Tasks: React.FC = () => {
                       }}
                     >
                       Modifier
+                    </Button>
+                    <Button
+                      size="small"
+                      startIcon={<PersonAddIcon />}
+                      onClick={() => handleOpenInviteDialog(task)}
+                      sx={{ 
+                        color: themeMode === 'dark' ? '#81c784' : 'success.main',
+                      }}
+                    >
+                      Inviter
                     </Button>
                     <Button
                       size="small"
@@ -644,6 +735,15 @@ const Tasks: React.FC = () => {
                     Lieu : {event.location}
                   </Typography>
                 )}
+                
+                {/* Affichage des participants */}
+                <Box mt={2}>
+                  <ParticipantList
+                    eventId={event.id}
+                    themeMode={themeMode}
+                    compact={false}
+                  />
+                </Box>
               </CardContent>
               <CardActions>
                 <IconButton 
@@ -822,6 +922,16 @@ const Tasks: React.FC = () => {
           </DialogActions>
         </form>
       </Dialog>
+
+      {/* Dialogue d'invitation aux tâches */}
+      <InviteToTaskDialog
+        open={inviteDialogOpen}
+        onClose={handleCloseInviteDialog}
+        taskId={selectedTaskForInvite?.id || ''}
+        taskTitle={selectedTaskForInvite?.title || ''}
+        themeMode={themeMode}
+        onSuccess={handleInviteSuccess}
+      />
     </Box>
   );
 };

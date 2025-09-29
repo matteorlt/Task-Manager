@@ -125,4 +125,65 @@ export const deleteEvent = async (req: Request, res: Response) => {
     console.error('Erreur lors de la suppression de l\'événement:', error);
     res.status(500).json({ message: 'Erreur lors de la suppression de l\'événement' });
   }
+};
+
+export const getEventParticipants = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const eventId = req.params.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Non authentifié' });
+    }
+
+    // Vérifier que l'événement appartient à l'utilisateur
+    const [existingEvents] = await pool.execute<Event[]>(
+      'SELECT * FROM events WHERE id = ? AND user_id = ?',
+      [eventId, userId]
+    );
+
+    if (existingEvents.length === 0) {
+      return res.status(403).json({ message: 'Accès non autorisé à cet événement' });
+    }
+
+    // Récupérer les invitations acceptées pour cet événement
+    const [participants] = await pool.execute<RowDataPacket[]>(
+      `SELECT 
+        i.recipient_email,
+        i.sender_name,
+        i.status,
+        u.name as recipient_name
+      FROM invitations i
+      LEFT JOIN users u ON u.email = i.recipient_email
+      WHERE i.event_id = ? AND i.status = 'accepted'
+      ORDER BY i.created_at ASC`,
+      [eventId]
+    );
+
+    // Ajouter le créateur de l'événement comme participant
+    const [creator] = await pool.execute<RowDataPacket[]>(
+      'SELECT email, name FROM users WHERE id = ?',
+      [userId]
+    );
+
+    const allParticipants = [
+      {
+        email: creator[0]?.email,
+        name: creator[0]?.name,
+        status: 'creator',
+        sender_name: null
+      },
+      ...participants.map(p => ({
+        email: p.recipient_email,
+        name: p.recipient_name || p.recipient_email,
+        status: p.status,
+        sender_name: p.sender_name
+      }))
+    ];
+
+    res.json(allParticipants);
+  } catch (error) {
+    console.error('Erreur lors de la récupération des participants:', error);
+    res.status(500).json({ message: 'Erreur lors de la récupération des participants' });
+  }
 }; 
