@@ -17,7 +17,7 @@ export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     const [users] = await pool.execute<User[]>(
-      'SELECT id, name, email, password, profile_picture FROM users WHERE email = ?',
+      'SELECT * FROM users WHERE email = ?',
       [email]
     );
 
@@ -100,7 +100,7 @@ export const verifyToken = async (req: Request, res: Response) => {
     const userId = req.user?.id;
 
     const [users] = await pool.execute<User[]>(
-      'SELECT id, name, email, profile_picture FROM users WHERE id = ?',
+      'SELECT id, name, email FROM users WHERE id = ?',
       [userId]
     );
 
@@ -113,8 +113,7 @@ export const verifyToken = async (req: Request, res: Response) => {
       user: {
         id: user.id,
         name: user.name,
-        email: user.email,
-        profilePicture: user.profile_picture ? `/uploads/profile-pictures/${user.profile_picture}` : null
+        email: user.email
       }
     });
   } catch (error) {
