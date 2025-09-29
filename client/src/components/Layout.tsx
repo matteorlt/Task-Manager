@@ -36,7 +36,6 @@ import {
 import { RootState } from '../store';
 import { logout } from '../store/slices/authSlice';
 import { toggleTheme } from '../store/slices/themeSlice';
-import InviteButton from './InviteButton';
 import Notification from './Notification';
 import { invitationService } from '../services/invitationService';
 import { API_BASE_URL } from '../config';
@@ -140,6 +139,7 @@ const Layout: React.FC = () => {
                 }
               }}
               sx={{
+                position: 'relative',
                 '&:hover': {
                   backgroundColor: themeMode === 'dark' ? 'rgba(144,202,249,0.08)' : 'rgba(33, 150, 243, 0.08)',
                 },
@@ -150,9 +150,10 @@ const Layout: React.FC = () => {
                   ? (themeMode === 'dark' ? '#90caf9' : 'primary.main')
                   : 'inherit',
                 fontWeight: isActive ? 600 : 400,
+                overflow: 'hidden',
               }}
             >
-              <ListItemIcon sx={{ color: isActive ? (themeMode === 'dark' ? '#90caf9' : 'primary.main') : 'inherit' }}>
+              <ListItemIcon sx={{ color: isActive ? (themeMode === 'dark' ? '#90caf9' : 'primary.main') : 'inherit', minWidth: 40 }}>
                 {item.icon}
               </ListItemIcon>
               <ListItemText primary={item.text} />
@@ -198,7 +199,7 @@ const Layout: React.FC = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', height: '100vh' }}>
+    <Box sx={{ display: 'flex', height: '100vh', overflowX: 'hidden' }}>
       <AppBar
         position="fixed"
         sx={{
@@ -220,11 +221,10 @@ const Layout: React.FC = () => {
             Task Manager
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <InviteButton onInvite={handleInvite} />
-            <IconButton color="inherit" onClick={handleThemeToggle}>
+          <IconButton color="inherit" onClick={handleThemeToggle} sx={{ '&:hover': { transform: 'scale(1.02)' }, transition: 'transform .15s ease', overflow: 'hidden' }}>
               {themeMode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
             </IconButton>
-            <IconButton color="inherit" onClick={handleNotificationClick}>
+          <IconButton color="inherit" onClick={handleNotificationClick} sx={{ '&:hover': { transform: 'scale(1.02)' }, transition: 'transform .15s ease', overflow: 'hidden' }}>
               <Badge badgeContent={notifications.length} color="error">
                 <NotificationsIcon />
               </Badge>
@@ -232,7 +232,7 @@ const Layout: React.FC = () => {
             <IconButton
               color="inherit"
               onClick={() => navigate('/profile')}
-              sx={{ p: 0 }}
+            sx={{ p: 0, '&:hover': { transform: 'scale(1.02)' }, transition: 'transform .15s ease', overflow: 'hidden' }}
             >
               <Avatar
                 src={user?.profilePicture ? `${API_BASE_URL}${user.profilePicture}` : undefined}
@@ -308,6 +308,7 @@ const Layout: React.FC = () => {
           sx={{
             '& .MuiDrawer-paper': {
               width: 250,
+              boxSizing: 'border-box',
               background: themeMode === 'dark' ? '#1e1e1e' : '#fff',
               color: themeMode === 'dark' ? '#fff' : 'inherit',
               borderRight: themeMode === 'dark' ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.12)',
@@ -328,6 +329,8 @@ const Layout: React.FC = () => {
           background: themeMode === 'dark' ? '#121212' : '#f5f5f5',
           minHeight: 'calc(100vh - 64px)',
           overflowY: 'auto',
+          overflowX: 'hidden',
+          boxSizing: 'border-box',
         }}
       >
         <Outlet />

@@ -13,3 +13,4 @@ CREATE TABLE IF NOT EXISTS invitations (
 
 ALTER TABLE invitations ADD COLUMN event_id INT;
 ALTER TABLE invitations ADD COLUMN sender_name VARCHAR(255);
+ALTER TABLE invitations ADD COLUMN task_id INT;

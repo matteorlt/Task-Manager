@@ -128,39 +128,59 @@ export const acceptInvitation = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Invitation non trouvée ou déjà traitée' });
     }
 
-    // Récupérer l'event_id de l'invitation
+    // Récupérer les ids liés à l'invitation
     const [invitations] = await pool.execute<RowDataPacket[]>(
-      'SELECT event_id FROM invitations WHERE id = ?',
+      'SELECT event_id, task_id FROM invitations WHERE id = ?',
       [invitationId]
     );
-    if (!invitations.length || !invitations[0].event_id) {
-      return res.status(404).json({ message: 'Aucun événement lié à cette invitation' });
+    if (!invitations.length) {
+      return res.status(404).json({ message: 'Invitation introuvable' });
     }
-    const eventId = invitations[0].event_id;
+    const { event_id: eventId, task_id: taskId } = invitations[0] as any;
 
-    // Récupérer l'événement original
-    const [events] = await pool.execute<RowDataPacket[]>(
-      'SELECT * FROM events WHERE id = ?',
-      [eventId]
-    );
-    if (!events.length) {
-      return res.status(404).json({ message: 'Événement original introuvable' });
+    if (eventId) {
+      // Cas: invitation à un événement
+      const [events] = await pool.execute<RowDataPacket[]>(
+        'SELECT * FROM events WHERE id = ?',
+        [eventId]
+      );
+      if (!events.length) {
+        return res.status(404).json({ message: 'Événement original introuvable' });
+      }
+      const event = events[0];
+      await pool.execute(
+        'INSERT INTO events (user_id, title, description, start_date, end_date, all_day, location) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [userId, event.title, event.description, event.start_date, event.end_date, event.all_day, event.location]
+      );
+      await pool.execute(
+        'INSERT INTO notifications (user_id, message, type) VALUES (?, ?, "INVITATION")',
+        [userId, 'Vous avez accepté une invitation']
+      );
+      return res.json({ message: 'Invitation acceptée avec succès' });
     }
-    const event = events[0];
 
-    // Créer une copie de l'événement pour l'utilisateur invité
-    await pool.execute(
-      'INSERT INTO events (user_id, title, description, start_date, end_date, all_day, location) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [userId, event.title, event.description, event.start_date, event.end_date, event.all_day, event.location]
-    );
+    if (taskId) {
+      // Cas: invitation à une tâche
+      const [tasks] = await pool.execute<RowDataPacket[]>(
+        'SELECT * FROM tasks WHERE id = ?',
+        [taskId]
+      );
+      if (!tasks.length) {
+        return res.status(404).json({ message: 'Tâche originale introuvable' });
+      }
+      const task = tasks[0];
+      await pool.execute(
+        'INSERT INTO tasks (user_id, title, description, status, priority, due_date, category) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [userId, task.title, task.description, 'TODO', task.priority, task.due_date, task.category]
+      );
+      await pool.execute(
+        'INSERT INTO notifications (user_id, message, type) VALUES (?, ?, "TASK_INVITATION")',
+        [userId, `Vous avez accepté l'invitation pour la tâche: ${task.title}`]
+      );
+      return res.json({ message: 'Invitation acceptée avec succès' });
+    }
 
-    // Créer une notification
-    await pool.execute(
-      'INSERT INTO notifications (user_id, message, type) VALUES (?, ?, "INVITATION")',
-      [userId, 'Vous avez accepté une invitation']
-    );
-
-    res.json({ message: 'Invitation acceptée avec succès' });
+    return res.status(400).json({ message: 'Invitation mal formée (aucun event_id ou task_id)' });
   } catch (error) {
     console.error('Erreur lors de l\'acceptation de l\'invitation:', error);
     res.status(500).json({ message: 'Erreur lors de l\'acceptation de l\'invitation' });

@@ -84,7 +84,7 @@ class InvitationService {
 
   async sendTaskInvitation(email: string, taskId: string): Promise<void> {
     try {
-      await axios.post('/api/task-invitations/send', { recipientEmail: email, taskId }, {
+      await axios.post(API_ENDPOINTS.TASK_INVITATIONS.SEND, { recipientEmail: email, taskId }, {
         headers: getAuthHeaders(),
       });
     } catch (error) {
@@ -95,7 +95,7 @@ class InvitationService {
 
   async getTaskParticipants(taskId: string): Promise<Participant[]> {
     try {
-      const response = await axios.get(`/api/task-invitations/${taskId}/participants`, {
+      const response = await axios.get(API_ENDPOINTS.TASK_INVITATIONS.PARTICIPANTS(taskId), {
         headers: getAuthHeaders(),
       });
       return response.data;
@@ -107,7 +107,7 @@ class InvitationService {
 
   async acceptTaskInvitation(invitationId: string): Promise<void> {
     try {
-      await axios.post(`/api/task-invitations/${invitationId}/accept`, {}, {
+      await axios.post(API_ENDPOINTS.TASK_INVITATIONS.ACCEPT(invitationId), {}, {
         headers: getAuthHeaders(),
       });
     } catch (error) {
@@ -118,7 +118,7 @@ class InvitationService {
 
   async rejectTaskInvitation(invitationId: string): Promise<void> {
     try {
-      await axios.post(`/api/task-invitations/${invitationId}/reject`, {}, {
+      await axios.post(API_ENDPOINTS.TASK_INVITATIONS.REJECT(invitationId), {}, {
         headers: getAuthHeaders(),
       });
     } catch (error) {

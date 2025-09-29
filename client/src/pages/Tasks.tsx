@@ -43,6 +43,8 @@ import { CalendarToday as CalendarTodayIcon, Category as CategoryIcon } from '@m
 import { API_ENDPOINTS } from '../config';
 import ParticipantList from '../components/ParticipantList';
 import InviteToTaskDialog from '../components/InviteToTaskDialog';
+import InviteToEventDialog from '../components/InviteToEventDialog';
+import CreateEventOrTaskDialog from '../components/CreateEventOrTaskDialog';
 
 const Tasks: React.FC = () => {
   const dispatch = useDispatch();
@@ -75,6 +77,9 @@ const Tasks: React.FC = () => {
   });
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [selectedTaskForInvite, setSelectedTaskForInvite] = useState<Task | null>(null);
+  const [eventInviteOpen, setEventInviteOpen] = useState(false);
+  const [selectedEventForInvite, setSelectedEventForInvite] = useState<Event | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -349,6 +354,68 @@ const Tasks: React.FC = () => {
     }
   };
 
+  const handleOpenEventInvite = (event: Event) => {
+    setSelectedEventForInvite(event);
+    setEventInviteOpen(true);
+  };
+
+  const handleCloseEventInvite = () => {
+    setEventInviteOpen(false);
+    setSelectedEventForInvite(null);
+  };
+
+  const handleUnifiedCreateEvent = async (payload: { title: string; description: string; startDate: string; endDate: string; allDay: boolean; location: string; invites: string[] }) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(API_ENDPOINTS.EVENTS.CREATE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        title: payload.title,
+        description: payload.description,
+        startDate: payload.startDate,
+        endDate: payload.endDate,
+        allDay: payload.allDay,
+        location: payload.location,
+      }),
+    });
+    if (!res.ok) throw new Error('Erreur création évènement');
+    const created = await res.json();
+    dispatch(fetchEventsSuccess([ ...events, created ]));
+    for (const email of payload.invites) {
+      await fetch(API_ENDPOINTS.INVITATIONS.SEND, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ recipientEmail: email, eventId: created.id }),
+      });
+    }
+  };
+
+  const handleUnifiedCreateTask = async (payload: { title: string; description: string; status: string; priority: string; dueDate: string | null; category: string; invites: string[] }) => {
+    const token = localStorage.getItem('token');
+    const res = await fetch(API_ENDPOINTS.TASKS.CREATE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        title: payload.title,
+        description: payload.description,
+        status: payload.status,
+        priority: payload.priority,
+        dueDate: payload.dueDate,
+        category: payload.category,
+      }),
+    });
+    if (!res.ok) throw new Error('Erreur création tâche');
+    const created = await res.json();
+    dispatch(addTask(created));
+    for (const email of payload.invites) {
+      await fetch(API_ENDPOINTS.TASK_INVITATIONS.SEND, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ recipientEmail: email, taskId: created.id }),
+      });
+    }
+  };
+
   const handleDeleteEvent = async (eventId: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
       try {
@@ -466,13 +533,10 @@ const Tasks: React.FC = () => {
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => handleOpen()}
-          sx={{
-            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
-            boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
-          }}
+          onClick={() => setCreateOpen(true)}
+          sx={{ ml: 2 }}
         >
-          Nouvelle tâche
+          Événement / Tâche
         </Button>
       </Box>
 
@@ -699,67 +763,126 @@ const Tasks: React.FC = () => {
         Événements
       </Typography>
       <Grid container spacing={3}>
-        {events.map((event: Event) => (
+        {events.map((event: Event, index) => (
           <Grid item xs={12} sm={6} md={4} key={event.id}>
-            <Card sx={{
-              background: themeMode === 'dark' 
-                ? 'linear-gradient(145deg, #1e1e1e 0%, #2d2d2d 100%)'
-                : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
-            }}>
-              <CardContent>
-                <Typography 
-                  variant="h6" 
+            <Card
+              sx={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                background: themeMode === 'dark'
+                  ? 'linear-gradient(145deg, #1e1e1e 0%, #2d2d2d 100%)'
+                  : 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+                position: 'relative',
+                overflow: 'visible',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '4px',
+                  background: themeMode === 'dark'
+                    ? 'linear-gradient(90deg, #66bb6a 0%, #26a69a 100%)'
+                    : 'linear-gradient(90deg, #81c784 0%, #4db6ac 100%)',
+                  borderTopLeftRadius: '12px',
+                  borderTopRightRadius: '12px',
+                },
+              }}
+            >
+              <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                <Typography
+                  variant="h6"
                   gutterBottom
-                  sx={{ color: themeMode === 'dark' ? '#fff' : 'text.primary' }}
+                  sx={{
+                    fontWeight: 600,
+                    color: themeMode === 'dark' ? '#fff' : 'text.primary',
+                  }}
                 >
                   {event.title}
                 </Typography>
-                <Typography 
-                  color={themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary'} 
-                  gutterBottom
-                >
-                  {event.description}
-                </Typography>
-                <Typography 
-                  variant="body2" 
-                  sx={{ color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary' }}
-                >
-                  Début : {formatDate(event.startDate || (event as any)['start_date'])}<br />
-                  Fin : {formatDate(event.endDate || (event as any)['end_date'])}
-                </Typography>
-                {event.location && (
-                  <Typography 
-                    variant="body2" 
-                    sx={{ color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary' }}
+
+                {event.description && (
+                  <Typography
+                    color={themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary'}
+                    gutterBottom
+                    sx={{ mb: 2, fontSize: '0.9rem', lineHeight: 1.5 }}
                   >
-                    Lieu : {event.location}
+                    {event.description}
                   </Typography>
                 )}
-                
-                {/* Affichage des participants */}
+
+                <Typography
+                  variant="body2"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 1,
+                    color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary',
+                  }}
+                >
+                  <CalendarTodayIcon fontSize="small" />
+                  Début: {formatDate(event.startDate || (event as any)['start_date'])}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 1,
+                    color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary',
+                  }}
+                >
+                  <CalendarTodayIcon fontSize="small" />
+                  Fin: {formatDate(event.endDate || (event as any)['end_date'])}
+                </Typography>
+
+                {event.location && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      mb: 1,
+                      color: themeMode === 'dark' ? 'rgba(255, 255, 255, 0.7)' : 'text.secondary',
+                    }}
+                  >
+                    Lieu: {event.location}
+                  </Typography>
+                )}
+
                 <Box mt={2}>
-                  <ParticipantList
-                    eventId={event.id}
-                    themeMode={themeMode}
-                    compact={false}
-                  />
+                  <ParticipantList eventId={event.id} themeMode={themeMode} compact={true} />
                 </Box>
               </CardContent>
-              <CardActions>
-                <IconButton 
-                  size="small" 
+              <CardActions sx={{ p: 2, pt: 0 }}>
+                <Button
+                  size="small"
+                  startIcon={<EditIcon />}
                   onClick={() => handleOpenEvent(event)}
                   sx={{ color: themeMode === 'dark' ? '#90caf9' : 'primary.main' }}
                 >
-                  <EditIcon />
-                </IconButton>
-                <IconButton 
-                  size="small" 
+                  Modifier
+                </Button>
+                <Button
+                  size="small"
+                  startIcon={<PersonAddIcon />}
+                  onClick={() => handleOpenEventInvite(event)}
+                  sx={{ color: themeMode === 'dark' ? '#81c784' : 'success.main' }}
+                >
+                  Inviter
+                </Button>
+                <Button
+                  size="small"
+                  startIcon={<DeleteIcon />}
                   onClick={() => handleDeleteEvent(event.id)}
                   sx={{ color: themeMode === 'dark' ? '#f48fb1' : 'error.main' }}
                 >
-                  <DeleteIcon />
-                </IconButton>
+                  Supprimer
+                </Button>
               </CardActions>
             </Card>
           </Grid>
@@ -820,8 +943,8 @@ const Tasks: React.FC = () => {
             </TextField>
             <TextField
               fullWidth
-              label="Date limite"
-              type="date"
+              label="Date et heure limite"
+              type="datetime-local"
               value={formData.dueDate}
               onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
               margin="normal"
@@ -931,6 +1054,22 @@ const Tasks: React.FC = () => {
         taskTitle={selectedTaskForInvite?.title || ''}
         themeMode={themeMode}
         onSuccess={handleInviteSuccess}
+      />
+
+      <InviteToEventDialog
+        open={eventInviteOpen}
+        onClose={handleCloseEventInvite}
+        eventId={String(selectedEventForInvite?.id || '')}
+        eventTitle={selectedEventForInvite?.title || ''}
+        themeMode={themeMode}
+        onSuccess={() => { /* optionally refresh participants */ }}
+      />
+
+      <CreateEventOrTaskDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreateEvent={handleUnifiedCreateEvent}
+        onCreateTask={handleUnifiedCreateTask}
       />
     </Box>
   );

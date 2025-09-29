@@ -80,6 +80,7 @@ const AppContent: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <style>{`html, body, #root { overflow-x: hidden; }`}</style>
       <AuthLoader>
         <Router>
           <Routes>

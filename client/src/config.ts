@@ -1,4 +1,5 @@
-export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+const RAW_BASE = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+export const API_BASE_URL = RAW_BASE.endsWith('/api') ? RAW_BASE : `${RAW_BASE}/api`;
 
 export const API_ENDPOINTS = {
   AUTH: {
@@ -17,6 +18,12 @@ export const API_ENDPOINTS = {
     CREATE: `${API_BASE_URL}/events`,
     UPDATE: (id: string) => `${API_BASE_URL}/events/${id}`,
     DELETE: (id: string) => `${API_BASE_URL}/events/${id}`,
+  },
+  TASK_INVITATIONS: {
+    SEND: `${API_BASE_URL}/task-invitations/send`,
+    PARTICIPANTS: (taskId: string) => `${API_BASE_URL}/task-invitations/${taskId}/participants`,
+    ACCEPT: (invitationId: string) => `${API_BASE_URL}/task-invitations/${invitationId}/accept`,
+    REJECT: (invitationId: string) => `${API_BASE_URL}/task-invitations/${invitationId}/reject`,
   },
   INVITATIONS: {
     GET_ALL: `${API_BASE_URL}/invitations`,

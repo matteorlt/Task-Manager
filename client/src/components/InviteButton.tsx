@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { invitationService } from '../services/invitationService';
+import { API_ENDPOINTS } from '../config';
 
 interface Event {
   id: string;
@@ -35,7 +36,7 @@ const InviteButton: React.FC<InviteButtonProps> = ({ onInvite }) => {
     const fetchEvents = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:3000/api/events', {
+        const response = await fetch(API_ENDPOINTS.EVENTS.GET_ALL, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

@@ -16,7 +16,8 @@ import {
   Switch,
   Alert,
 } from '@mui/material';
-import { Add as AddIcon, CalendarToday as CalendarIcon, Event as EventIcon } from '@mui/icons-material';
+import { Add as AddIcon, CalendarToday as CalendarIcon, Event as EventIcon, PersonAdd as PersonAddIcon } from '@mui/icons-material';
+import CreateEventOrTaskDialog from '../components/CreateEventOrTaskDialog';
 import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
 import format from 'date-fns/format';
 import parse from 'date-fns/parse';
@@ -37,6 +38,8 @@ import {
   fetchTasksStart,
   fetchTasksSuccess,
   fetchTasksFailure,
+  addTask,
+  updateTask,
 } from '../store/slices/taskSlice';
 import { Event } from '../store/slices/eventSlice';
 import { Task } from '../store/slices/taskSlice';
@@ -44,6 +47,8 @@ import { formatDate, formatDateForInput, formatDateForServer } from '../utils/da
 import { motion } from 'framer-motion';
 import { API_ENDPOINTS } from '../config';
 import ParticipantList from '../components/ParticipantList';
+import InviteToTaskDialog from '../components/InviteToTaskDialog';
+import InviteToEventDialog from '../components/InviteToEventDialog';
 
 // Type commun pour les événements du calendrier
 interface CalendarEvent {
@@ -64,10 +69,13 @@ const locales = {
   'fr': fr,
 };
 
+// Force week to start on Monday
+const startOfWeekMonday = (date: Date) => startOfWeek(date, { weekStartsOn: 1 });
+
 const localizer = dateFnsLocalizer({
   format,
   parse,
-  startOfWeek,
+  startOfWeek: startOfWeekMonday,
   getDay,
   locales,
 });
@@ -79,8 +87,21 @@ const CalendarPage: React.FC = () => {
   const { token } = useSelector((state: RootState) => state.auth);
   const themeMode = useSelector((state: RootState) => state.theme.mode);
   const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [taskDialogOpen, setTaskDialogOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [taskForm, setTaskForm] = useState({
+    title: '',
+    description: '',
+    status: 'TODO' as 'TODO'|'IN_PROGRESS'|'DONE',
+    priority: 'MEDIUM' as 'LOW'|'MEDIUM'|'HIGH',
+    dueDate: '',
+    category: '',
+  });
+  const [inviteTaskOpen, setInviteTaskOpen] = useState(false);
+  const [inviteEventOpen, setInviteEventOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -91,6 +112,12 @@ const CalendarPage: React.FC = () => {
   });
   const navigate = useNavigate();
   const hasMountedRef = useRef(false);
+
+  const normalizeId = (value: string | number | undefined): string => {
+    if (value === undefined || value === null) return '';
+    const str = String(value);
+    return str.replace(/^task-/, '').replace(/^event-/, '');
+  };
 
   useEffect(() => {
     hasMountedRef.current = true;
@@ -314,8 +341,24 @@ const CalendarPage: React.FC = () => {
 
   const handleEventClick = (calendarEvent: CalendarEvent) => {
     if (calendarEvent.type === 'task') {
-      navigate('/tasks');
+      const targetId = normalizeId(calendarEvent.id);
+      const task = tasks.find(t => String(t.id) === targetId);
+      if (task) {
+        setEditingTask(task);
+        setTaskForm({
+          title: task.title,
+          description: task.description,
+          status: task.status as any,
+          priority: task.priority as any,
+          dueDate: formatDateForInput(task.dueDate),
+          category: task.category || '',
+        });
+        setTaskDialogOpen(true);
+      } else {
+        navigate('/tasks');
+      }
     } else {
+      setSelectedEvent(calendarEvent);
       handleOpen(calendarEvent);
     }
   };
@@ -384,13 +427,13 @@ const CalendarPage: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<AddIcon />}
-            onClick={() => handleOpen()}
+            onClick={() => setCreateOpen(true)}
             sx={{
               background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
               boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
             }}
           >
-            Nouvel événement
+            Événement / Tâche
           </Button>
         </Box>
 
@@ -502,6 +545,91 @@ const CalendarPage: React.FC = () => {
         </motion.div>
       </motion.div>
 
+      {/* Dialog édition tâche depuis calendrier */}
+      <Dialog open={taskDialogOpen} onClose={() => setTaskDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Modifier la tâche
+          <Button
+            size="small"
+            startIcon={<PersonAddIcon />}
+            onClick={() => setInviteTaskOpen(true)}
+            sx={{ ml: 2 }}
+          >
+            Inviter
+          </Button>
+        </DialogTitle>
+        <DialogContent>
+          <TextField fullWidth label="Titre" value={taskForm.title} onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })} margin="normal" required />
+          <TextField fullWidth label="Description" value={taskForm.description} onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })} margin="normal" multiline rows={3} />
+          <TextField fullWidth select label="Statut" value={taskForm.status} onChange={(e) => setTaskForm({ ...taskForm, status: e.target.value as any })} margin="normal">
+            <MenuItem value="TODO">À faire</MenuItem>
+            <MenuItem value="IN_PROGRESS">En cours</MenuItem>
+            <MenuItem value="DONE">Terminé</MenuItem>
+          </TextField>
+          <TextField fullWidth select label="Priorité" value={taskForm.priority} onChange={(e) => setTaskForm({ ...taskForm, priority: e.target.value as any })} margin="normal">
+            <MenuItem value="LOW">Basse</MenuItem>
+            <MenuItem value="MEDIUM">Moyenne</MenuItem>
+            <MenuItem value="HIGH">Haute</MenuItem>
+          </TextField>
+          <TextField fullWidth label="Date et heure limite" type="datetime-local" value={taskForm.dueDate} onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })} margin="normal" InputLabelProps={{ shrink: true }} />
+          <TextField fullWidth label="Catégorie" value={taskForm.category} onChange={(e) => setTaskForm({ ...taskForm, category: e.target.value })} margin="normal" />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTaskDialogOpen(false)}>Annuler</Button>
+          <Button variant="contained" onClick={async () => {
+            if (!editingTask) return;
+            const token = localStorage.getItem('token');
+            const payload = { title: taskForm.title, description: taskForm.description, status: taskForm.status, priority: taskForm.priority, dueDate: formatDateForServer(taskForm.dueDate), category: taskForm.category };
+            const res = await fetch(`${API_ENDPOINTS.TASKS.GET_ALL}/${editingTask.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(payload) });
+            if (res.ok) { const updated = await res.json(); dispatch(updateTask(updated)); setTaskDialogOpen(false); }
+          }}>Enregistrer</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Invite dialogs */}
+      <InviteToTaskDialog open={inviteTaskOpen} onClose={() => setInviteTaskOpen(false)} taskId={String(editingTask?.id || '')} taskTitle={editingTask?.title || ''} themeMode={themeMode} />
+      <InviteToEventDialog open={inviteEventOpen} onClose={() => setInviteEventOpen(false)} eventId={String(selectedEvent?.id || '')} eventTitle={selectedEvent?.title || ''} themeMode={themeMode} />
+      <CreateEventOrTaskDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreateEvent={async (payload) => {
+          const token = localStorage.getItem('token');
+          const res = await fetch(API_ENDPOINTS.EVENTS.CREATE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) throw new Error('Erreur création évènement');
+          const created = await res.json();
+          dispatch(addEvent(created));
+          for (const email of payload.invites) {
+            await fetch(API_ENDPOINTS.INVITATIONS.SEND, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ recipientEmail: email, eventId: created.id }),
+            });
+          }
+        }}
+        onCreateTask={async (payload) => {
+          const token = localStorage.getItem('token');
+          const res = await fetch(API_ENDPOINTS.TASKS.CREATE, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) throw new Error('Erreur création tâche');
+          const created = await res.json();
+          dispatch(addTask(created));
+          for (const email of payload.invites) {
+            await fetch(API_ENDPOINTS.TASK_INVITATIONS.SEND, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ recipientEmail: email, taskId: created.id }),
+            });
+          }
+        }}
+      />
+
       <Dialog 
         open={open} 
         onClose={handleClose} 
@@ -514,8 +642,18 @@ const CalendarPage: React.FC = () => {
           }
         }}
       >
-        <DialogTitle sx={{ color: themeMode === 'dark' ? '#fff' : 'inherit' }}>
+        <DialogTitle sx={{ color: themeMode === 'dark' ? '#fff' : 'inherit', display: 'flex', alignItems: 'center' }}>
           {selectedEvent ? 'Modifier l\'événement' : 'Nouvel événement'}
+          {selectedEvent && (
+            <Button
+              size="small"
+              startIcon={<PersonAddIcon />}
+              onClick={() => setInviteEventOpen(true)}
+              sx={{ ml: 2 }}
+            >
+              Inviter
+            </Button>
+          )}
         </DialogTitle>
         <form onSubmit={handleSubmit}>
           <DialogContent>
