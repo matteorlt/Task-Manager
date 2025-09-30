@@ -81,6 +81,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 // Servir les fichiers statiques
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/api/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Route de base pour tester
 app.get('/', (req, res) => {

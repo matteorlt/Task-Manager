@@ -58,6 +58,13 @@ const Profile: React.FC = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setProfileData(response.data);
+      // Synchroniser l'utilisateur global (utilisé par le Layout pour l'avatar du nav)
+      dispatch(setUser({
+        id: response.data.id,
+        name: response.data.name,
+        email: response.data.email,
+        profilePicture: response.data.profilePicture,
+      }));
       setFormData(prev => ({
         ...prev,
         name: response.data.name,
