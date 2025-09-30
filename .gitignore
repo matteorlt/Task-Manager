@@ -57,3 +57,7 @@ config.prod.js
 # Fichiers de build
 *.min.js
 *.min.css 
+
+# Uploads (photos de profil)
+server/uploads/profile-pictures/*
+!server/uploads/profile-pictures/.gitkeep
