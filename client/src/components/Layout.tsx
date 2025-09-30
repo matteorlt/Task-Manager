@@ -124,8 +124,8 @@ const Layout: React.FC = () => {
   ];
 
   const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <List sx={{ flexGrow: 1 }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflowX: 'hidden' }}>
+      <List sx={{ flexGrow: 1, overflowX: 'hidden' }}>
         {menuItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path === '/' && location.pathname === '');
           return (
@@ -312,6 +312,7 @@ const Layout: React.FC = () => {
               background: themeMode === 'dark' ? '#1e1e1e' : '#fff',
               color: themeMode === 'dark' ? '#fff' : 'inherit',
               borderRight: themeMode === 'dark' ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.12)',
+              overflowX: 'hidden',
             },
           }}
         >
