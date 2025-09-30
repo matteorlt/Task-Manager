@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, Box, Chip, FormControlLabel, Switch } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, Box, Chip, FormControlLabel, Switch, ToggleButton, ToggleButtonGroup, Alert, Typography } from '@mui/material';
+import { CalendarToday as CalendarIcon, Assignment as TaskIcon } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
 type Props = {
@@ -22,9 +23,11 @@ const CreateEventOrTaskDialog: React.FC<Props> = ({ open, onClose, onCreateEvent
   const [priority, setPriority] = useState<'LOW'|'MEDIUM'|'HIGH'>('MEDIUM');
   const [dueDate, setDueDate] = useState<string>('');
   const [category, setCategory] = useState('');
+  const [color, setColor] = useState<string>('#66bb6a');
   const [inviteInput, setInviteInput] = useState('');
   const [invites, setInvites] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const addInvite = () => {
     const email = inviteInput.trim();
@@ -40,13 +43,31 @@ const CreateEventOrTaskDialog: React.FC<Props> = ({ open, onClose, onCreateEvent
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
+      setError(null);
       if (isEvent) {
-        await onCreateEvent({ title, description, startDate, endDate, allDay, location, invites });
+        if (!title.trim()) {
+          setError('Le titre est requis.');
+          return;
+        }
+        if (!startDate) {
+          setError('La date de début est requise.');
+          return;
+        }
+        const effectiveEnd = endDate || startDate;
+        if (new Date(effectiveEnd) < new Date(startDate)) {
+          setError('La date de fin doit être postérieure à la date de début.');
+          return;
+        }
+        await onCreateEvent({ title, description, startDate, endDate: effectiveEnd, allDay, location, invites, color } as any);
       } else {
-        await onCreateTask({ title, description, status, priority, dueDate: dueDate || null, category, invites });
+        if (!title.trim()) {
+          setError('Le titre est requis.');
+          return;
+        }
+        await onCreateTask({ title, description, status, priority, dueDate: dueDate || null, category, invites, color } as any);
       }
       onClose();
-      setTitle(''); setDescription(''); setLocation(''); setAllDay(false); setStartDate(''); setEndDate(''); setStatus('TODO'); setPriority('MEDIUM'); setDueDate(''); setCategory(''); setInvites([]);
+      setTitle(''); setDescription(''); setLocation(''); setAllDay(false); setStartDate(''); setEndDate(''); setStatus('TODO'); setPriority('MEDIUM'); setDueDate(''); setCategory(''); setColor('#66bb6a'); setInvites([]);
     } finally {
       setSubmitting(false);
     }
@@ -58,76 +79,61 @@ const CreateEventOrTaskDialog: React.FC<Props> = ({ open, onClose, onCreateEvent
         {isEvent ? 'Créer un évènement' : 'Créer une tâche'}
       </DialogTitle>
       <DialogContent>
+        {error && (
+          <Box mb={2}>
+            <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>
+          </Box>
+        )}
         <Box mb={2}>
-          <Box
+          <ToggleButtonGroup
+            value={isEvent ? 'event' : 'task'}
+            exclusive
+            onChange={(e, val) => { if (val) setIsEvent(val === 'event'); }}
+            color="primary"
             sx={{
-              position: 'relative',
-              display: 'inline-flex',
-              borderRadius: '999px',
-              p: '4px',
-              background: 'linear-gradient(145deg, rgba(33,150,243,0.15), rgba(33,203,243,0.15))',
-              boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.08)'
+              borderRadius: 2,
+              overflow: 'hidden',
+              '& .MuiToggleButton-root': {
+                px: 2,
+                py: 1,
+                textTransform: 'none',
+                fontWeight: 600,
+                gap: 1,
+              }
             }}
-            role="tablist"
-            aria-label="Choisir type: Événement ou Tâche"
+            aria-label="Choisir le type"
           >
-            {/* Animated background pill */}
-            <Box
-              component={motion.span}
-              layout
-              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-              sx={{
-                position: 'absolute',
-                top: 4,
-                left: isEvent ? 4 : 'calc(50% + 0px)',
-                width: 'calc(50% - 8px)',
-                height: 'calc(100% - 8px)',
-                borderRadius: '999px',
-                background: 'linear-gradient(145deg, #1976D2, #21CBF3)',
-                boxShadow: '0 6px 18px rgba(33, 150, 243, 0.35)',
-                zIndex: 0,
-              }}
-            />
+            <ToggleButton value="event" aria-label="Événement">
+              <CalendarIcon fontSize="small" /> Événement
+            </ToggleButton>
+            <ToggleButton value="task" aria-label="Tâche">
+              <TaskIcon fontSize="small" /> Tâche
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Box>
 
-            {/* Left: Event */}
-            <Button
-              role="tab"
-              aria-selected={isEvent}
-              onClick={() => setIsEvent(true)}
-              sx={{
-                zIndex: 1,
-                borderRadius: '999px',
-                px: 3,
-                py: 1,
-                color: isEvent ? '#fff' : 'primary.main',
-                textTransform: 'none',
-                fontWeight: 600,
-                transition: 'color .2s ease',
-                '&:hover': { background: 'transparent' },
-              }}
-            >
-              Événement
-            </Button>
-
-            {/* Right: Task */}
-            <Button
-              role="tab"
-              aria-selected={!isEvent}
-              onClick={() => setIsEvent(false)}
-              sx={{
-                zIndex: 1,
-                borderRadius: '999px',
-                px: 3,
-                py: 1,
-                color: !isEvent ? '#fff' : 'primary.main',
-                textTransform: 'none',
-                fontWeight: 600,
-                transition: 'color .2s ease',
-                '&:hover': { background: 'transparent' },
-              }}
-            >
-              Tâche
-            </Button>
+        {/* Sélection de couleur */}
+        <Box mt={1} mb={1}>
+          <Typography variant="subtitle2" color="text.secondary">Couleur</Typography>
+          <Box mt={1} display="flex" gap={1} flexWrap="wrap">
+            {['#66bb6a','#42a5f5','#ab47bc','#ef5350','#ffa726','#26a69a','#8d6e63','#5c6bc0','#ec407a'].map((c) => (
+              <Box
+                key={c}
+                role="button"
+                aria-label={`Choisir la couleur ${c}`}
+                onClick={() => setColor(c)}
+                sx={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  bgcolor: c,
+                  border: color === c ? '3px solid rgba(0,0,0,0.35)' : '2px solid rgba(0,0,0,0.12)',
+                  cursor: 'pointer',
+                  boxShadow: color === c ? '0 0 0 3px rgba(33,150,243,0.25)' : 'none',
+                  transition: 'all .15s ease',
+                }}
+              />
+            ))}
           </Box>
         </Box>
         <TextField label="Titre" fullWidth margin="normal" value={title} onChange={e => setTitle(e.target.value)} />

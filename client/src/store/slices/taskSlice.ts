@@ -12,6 +12,7 @@ export interface Task {
   tags: string[];
   createdAt: string;
   updatedAt: string;
+  color?: string | null;
 }
 
 interface TaskState {

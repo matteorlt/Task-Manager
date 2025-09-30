@@ -63,6 +63,7 @@ interface CalendarEvent {
   participants?: string[];
   status?: 'TODO' | 'IN_PROGRESS' | 'DONE';
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+  color?: string | null;
 }
 
 const locales = {
@@ -109,6 +110,7 @@ const CalendarPage: React.FC = () => {
     endDate: '',
     allDay: false,
     location: '',
+    color: '#66bb6a',
   });
   const navigate = useNavigate();
   const hasMountedRef = useRef(false);
@@ -183,7 +185,8 @@ const CalendarPage: React.FC = () => {
           type: 'event' as const,
           description: event.description,
           location: event.location,
-          participants: event.participants
+          participants: event.participants,
+          color: (event as any).color || undefined,
         };
       }),
     ...tasks.map(task => ({
@@ -195,7 +198,8 @@ const CalendarPage: React.FC = () => {
       type: 'task' as const,
       description: task.description,
       status: task.status,
-      priority: task.priority
+      priority: task.priority,
+      color: (task as any).color || undefined,
     }))
   ];
   console.log('calendarEvents (détail):', JSON.stringify(calendarEvents, null, 2));
@@ -230,6 +234,7 @@ const CalendarPage: React.FC = () => {
         endDate: formatDateForInput(endDate),
         allDay: event.allDay,
         location: event.location || '',
+        color: event.color || '#66bb6a',
       });
     } else {
       setSelectedEvent(null);
@@ -240,6 +245,7 @@ const CalendarPage: React.FC = () => {
         endDate: '',
         allDay: false,
         location: '',
+        color: '#66bb6a',
       });
     }
     setOpen(true);
@@ -280,6 +286,7 @@ const CalendarPage: React.FC = () => {
       endDate: formatDateForServer(formData.endDate),
       allDay: formData.allDay,
       location: formData.location || '',
+      color: formData.color || null,
     };
 
     try {
@@ -511,9 +518,9 @@ const CalendarPage: React.FC = () => {
               selectable
               eventPropGetter={(event) => ({
                 style: {
-                  backgroundColor: event.type === 'task' 
+                  backgroundColor: (event as any).color || (event.type === 'task' 
                     ? (themeMode === 'dark' ? '#f50057' : '#f44336')
-                    : (themeMode === 'dark' ? '#4caf50' : '#66bb6a'),
+                    : (themeMode === 'dark' ? '#4caf50' : '#66bb6a')),
                   borderRadius: '4px',
                   opacity: 0.8,
                   color: '#fff',
@@ -725,6 +732,31 @@ const CalendarPage: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               margin="normal"
             />
+
+            {/* Sélection de couleur */}
+            <Box mt={1} mb={1}>
+              <Typography variant="subtitle2" color="text.secondary">Couleur</Typography>
+              <Box mt={1} display="flex" gap={1} flexWrap="wrap">
+                {['#66bb6a','#42a5f5','#ab47bc','#ef5350','#ffa726','#26a69a','#8d6e63','#5c6bc0','#ec407a'].map((c) => (
+                  <Box
+                    key={c}
+                    role="button"
+                    aria-label={`Choisir la couleur ${c}`}
+                    onClick={() => setFormData({ ...formData, color: c })}
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      bgcolor: c,
+                      border: formData.color === c ? '3px solid rgba(0,0,0,0.35)' : '2px solid rgba(0,0,0,0.12)',
+                      cursor: 'pointer',
+                      boxShadow: formData.color === c ? '0 0 0 3px rgba(33,150,243,0.25)' : 'none',
+                      transition: 'all .15s ease',
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
             
             {/* Affichage des participants pour les événements existants */}
             {selectedEvent && selectedEvent.type === 'event' && (

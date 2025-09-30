@@ -11,6 +11,7 @@ export interface Event {
   participants: string[];
   createdAt: string;
   updatedAt: string;
+  color?: string | null;
 }
 
 interface EventState {

@@ -28,7 +28,8 @@ export const getEvents = async (req: Request, res: Response) => {
       startDate: event.start_date.toISOString(),
       endDate: event.end_date.toISOString(),
       createdAt: event.created_at.toISOString(),
-      updatedAt: event.updated_at.toISOString()
+      updatedAt: event.updated_at.toISOString(),
+      color: (event as any).color || null,
     }));
     res.json(formattedEvents);
   } catch (error) {
@@ -40,11 +41,11 @@ export const getEvents = async (req: Request, res: Response) => {
 export const createEvent = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { title, description, startDate, endDate, allDay, location } = req.body;
+    const { title, description, startDate, endDate, allDay, location, color } = req.body;
 
     const [result] = await pool.execute<ResultSetHeader>(
-      'INSERT INTO events (user_id, title, description, start_date, end_date, all_day, location) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [userId, title, description, startDate, endDate, allDay, location]
+      'INSERT INTO events (user_id, title, description, start_date, end_date, all_day, location, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [userId, title, description, startDate, endDate, allDay, location, color || null]
     );
 
     const [newEvent] = await pool.execute<Event[]>(
@@ -57,7 +58,8 @@ export const createEvent = async (req: Request, res: Response) => {
       startDate: newEvent[0].start_date.toISOString(),
       endDate: newEvent[0].end_date.toISOString(),
       createdAt: newEvent[0].created_at.toISOString(),
-      updatedAt: newEvent[0].updated_at.toISOString()
+      updatedAt: newEvent[0].updated_at.toISOString(),
+      color: (newEvent[0] as any).color || null,
     });
   } catch (error) {
     console.error('Erreur lors de la création de l\'événement:', error);
@@ -69,7 +71,7 @@ export const updateEvent = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     const eventId = req.params.id;
-    const { title, description, startDate, endDate, allDay, location } = req.body;
+    const { title, description, startDate, endDate, allDay, location, color } = req.body;
 
     // Vérifier que l'événement appartient à l'utilisateur
     const [existingEvents] = await pool.execute<Event[]>(
@@ -82,8 +84,8 @@ export const updateEvent = async (req: Request, res: Response) => {
     }
 
     await pool.execute(
-      'UPDATE events SET title = ?, description = ?, start_date = ?, end_date = ?, all_day = ?, location = ? WHERE id = ? AND user_id = ?',
-      [title, description, startDate, endDate, allDay, location, eventId, userId]
+      'UPDATE events SET title = ?, description = ?, start_date = ?, end_date = ?, all_day = ?, location = ?, color = ? WHERE id = ? AND user_id = ?',
+      [title, description, startDate, endDate, allDay, location, color || null, eventId, userId]
     );
 
     const [updatedEvent] = await pool.execute<Event[]>(
@@ -96,7 +98,8 @@ export const updateEvent = async (req: Request, res: Response) => {
       startDate: updatedEvent[0].start_date.toISOString(),
       endDate: updatedEvent[0].end_date.toISOString(),
       createdAt: updatedEvent[0].created_at.toISOString(),
-      updatedAt: updatedEvent[0].updated_at.toISOString()
+      updatedAt: updatedEvent[0].updated_at.toISOString(),
+      color: (updatedEvent[0] as any).color || null,
     });
   } catch (error) {
     console.error('Erreur lors de la mise à jour de l\'événement:', error);

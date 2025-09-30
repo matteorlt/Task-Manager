@@ -17,7 +17,12 @@ const pool = mysql.createPool({
 pool.getConnection()
   .then(connection => {
     console.log('Connexion à la base de données réussie');
-    connection.release();
+    // Auto-migration légère: ajouter la colonne color à events et tasks si absente
+    connection.query("ALTER TABLE events ADD COLUMN IF NOT EXISTS color VARCHAR(7) NULL AFTER location;")
+      .catch(() => { /* ignore si déjà existante */ });
+    connection.query("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS color VARCHAR(7) NULL AFTER category;")
+      .catch(() => { /* ignore si déjà existante */ })
+      .finally(() => connection.release());
   })
   .catch(err => {
     console.error('Erreur de connexion à la base de données:', err);

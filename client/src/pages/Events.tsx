@@ -49,6 +49,7 @@ const Events: React.FC = () => {
     endDate: '',
     allDay: false,
     location: '',
+    color: '#66bb6a',
   });
 
   useEffect(() => {
@@ -82,6 +83,7 @@ const Events: React.FC = () => {
         endDate: formatDateForInput(event.endDate),
         allDay: event.allDay,
         location: event.location,
+        color: (event as any).color || '#66bb6a',
       });
     } else {
       const today = new Date();
@@ -96,6 +98,7 @@ const Events: React.FC = () => {
         endDate: defaultEndDate,
         allDay: false,
         location: '',
+        color: '#66bb6a',
       });
     }
     setOpen(true);
@@ -279,6 +282,31 @@ const Events: React.FC = () => {
               }
               label="Journée entière"
             />
+
+            {/* Sélection de couleur */}
+            <Box mt={1} mb={1}>
+              <Typography variant="subtitle2" color="text.secondary">Couleur</Typography>
+              <Box mt={1} display="flex" gap={1} flexWrap="wrap">
+                {['#66bb6a','#42a5f5','#ab47bc','#ef5350','#ffa726','#26a69a','#8d6e63','#5c6bc0','#ec407a'].map((c) => (
+                  <Box
+                    key={c}
+                    role="button"
+                    aria-label={`Choisir la couleur ${c}`}
+                    onClick={() => setFormData({ ...formData, color: c })}
+                    sx={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      bgcolor: c,
+                      border: formData.color === c ? '3px solid rgba(0,0,0,0.35)' : '2px solid rgba(0,0,0,0.12)',
+                      cursor: 'pointer',
+                      boxShadow: formData.color === c ? '0 0 0 3px rgba(33,150,243,0.25)' : 'none',
+                      transition: 'all .15s ease',
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Annuler</Button>

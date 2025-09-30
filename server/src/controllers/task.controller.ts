@@ -27,7 +27,8 @@ export const getTasks = async (req: Request, res: Response) => {
       ...task,
       dueDate: task.due_date ? task.due_date.toISOString() : null,
       createdAt: task.created_at.toISOString(),
-      updatedAt: task.updated_at.toISOString()
+      updatedAt: task.updated_at.toISOString(),
+      color: (task as any).color || null,
     }));
     res.json(formattedTasks);
   } catch (error) {
@@ -39,11 +40,11 @@ export const getTasks = async (req: Request, res: Response) => {
 export const createTask = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { title, description, status, priority, dueDate, category } = req.body;
+    const { title, description, status, priority, dueDate, category, color } = req.body;
 
     const [result] = await pool.execute<ResultSetHeader>(
-      'INSERT INTO tasks (user_id, title, description, status, priority, due_date, category) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [userId, title, description, status, priority, dueDate, category]
+      'INSERT INTO tasks (user_id, title, description, status, priority, due_date, category, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [userId, title, description, status, priority, dueDate, category, color || null]
     );
 
     const [newTask] = await pool.execute<Task[]>(
@@ -55,7 +56,8 @@ export const createTask = async (req: Request, res: Response) => {
       ...newTask[0],
       dueDate: newTask[0].due_date ? newTask[0].due_date.toISOString() : null,
       createdAt: newTask[0].created_at.toISOString(),
-      updatedAt: newTask[0].updated_at.toISOString()
+      updatedAt: newTask[0].updated_at.toISOString(),
+      color: (newTask[0] as any).color || null,
     });
   } catch (error) {
     console.error('Erreur lors de la création de la tâche:', error);
@@ -67,7 +69,7 @@ export const updateTask = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
     const taskId = req.params.id;
-    const { title, description, status, priority, dueDate, category } = req.body;
+    const { title, description, status, priority, dueDate, category, color } = req.body;
 
     // Vérifier que la tâche appartient à l'utilisateur
     const [existingTasks] = await pool.execute<Task[]>(
@@ -80,8 +82,8 @@ export const updateTask = async (req: Request, res: Response) => {
     }
 
     await pool.execute(
-      'UPDATE tasks SET title = ?, description = ?, status = ?, priority = ?, due_date = ?, category = ? WHERE id = ? AND user_id = ?',
-      [title, description, status, priority, dueDate, category, taskId, userId]
+      'UPDATE tasks SET title = ?, description = ?, status = ?, priority = ?, due_date = ?, category = ?, color = ? WHERE id = ? AND user_id = ?',
+      [title, description, status, priority, dueDate, category, color || null, taskId, userId]
     );
 
     const [updatedTask] = await pool.execute<Task[]>(
@@ -93,7 +95,8 @@ export const updateTask = async (req: Request, res: Response) => {
       ...updatedTask[0],
       dueDate: updatedTask[0].due_date ? updatedTask[0].due_date.toISOString() : null,
       createdAt: updatedTask[0].created_at.toISOString(),
-      updatedAt: updatedTask[0].updated_at.toISOString()
+      updatedAt: updatedTask[0].updated_at.toISOString(),
+      color: (updatedTask[0] as any).color || null,
     });
   } catch (error) {
     console.error('Erreur lors de la mise à jour de la tâche:', error);
